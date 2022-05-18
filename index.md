@@ -1,6 +1,7 @@
 ## Welcome to GitHub Pages
 Hi~, 如果你感觉本站点对你有帮助,欢迎Star.
-如果你有什么需求或者你也有分享的好东西,欢迎在issue中提出来.
+
+如果你有什么*需求*或者你也有*分享*的好东西,欢迎在[issue](https://github.com/kenyon01/kenyon01.github.io/issues)中提出来,作者看到了会第一时间更新.
 
 ## 系统工具
 
@@ -20,7 +21,7 @@ Hi~, 如果你感觉本站点对你有帮助,欢迎Star.
 #### Office
 #### 系统激活
 
-## 提交问题
+## [提交问题]((https://github.com/kenyon01/kenyon01.github.io/issues))
 
 
 ### Support or Contact
