@@ -26,6 +26,9 @@ Hi~, 如果你感觉本站点对你有帮助,欢迎Star.
 #### Office
 #### 系统激活
 
+## 机器学习
+[李宏毅2022春,包括作业等](https://speech.ee.ntu.edu.tw/~hylee/ml/2022-spring.php)
+
 ## [提交问题]((https://github.com/kenyon01/kenyon01.github.io/issues))
 
 
