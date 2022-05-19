@@ -1,4 +1,4 @@
-![](https://raw.githubusercontent.com/kenyon01/image-host/main/img/ayanlogo.svg)
+![](https://github.com/kenyon01/image-host/blob/main/img/ayanlogo1.svg)
 
 ## Welcome to GitHub Pages
 Hi~, 如果你感觉本站点对你有帮助,欢迎Star.
