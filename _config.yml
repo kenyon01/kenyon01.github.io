@@ -1,1 +1,20 @@
-theme: jekyll-theme-cayman
+title: "阿岩 · Qingyan"
+description: "量化交易、AI 应用与工程实践。记录正在构建的工具，以及一路学到的东西。"
+url: "https://kenyon01.github.io"
+baseurl: ""
+lang: "zh-CN"
+timezone: "Asia/Shanghai"
+author:
+  name: "阿岩"
+  github: "kenyon01"
+permalink: /blog/:year/:month/:day/:title/
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+future: false
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+

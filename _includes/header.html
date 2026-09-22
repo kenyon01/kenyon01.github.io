@@ -1,0 +1,21 @@
+<header class="site-header" data-header>
+  <div class="shell nav-shell">
+    <a class="brand" href="{{ '/' | relative_url }}" aria-label="返回首页">
+      <span class="brand-mark" aria-hidden="true">Q</span>
+      <span class="brand-copy">Qingyan<span class="brand-dot">.</span></span>
+    </a>
+
+    <button class="nav-toggle" type="button" aria-label="打开导航" aria-expanded="false" data-nav-toggle>
+      <span></span><span></span>
+    </button>
+
+    <nav class="site-nav" aria-label="主导航" data-nav>
+      <a href="{{ '/' | relative_url }}" {% if page.url == '/' %}aria-current="page"{% endif %}>首页</a>
+      <a href="{{ '/projects/' | relative_url }}" {% if page.url == '/projects/' %}aria-current="page"{% endif %}>项目</a>
+      <a href="{{ '/blog/' | relative_url }}" {% if page.url contains '/blog/' %}aria-current="page"{% endif %}>文章</a>
+      <a href="{{ '/about/' | relative_url }}" {% if page.url == '/about/' %}aria-current="page"{% endif %}>关于</a>
+      <a class="nav-github" href="https://github.com/kenyon01" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+    </nav>
+  </div>
+</header>
+

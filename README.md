@@ -1,28 +1,26 @@
-## Welcome to GitHub Pages
-Hi~, 如果你感觉本站点对你有帮助,欢迎Star.
-如果你有什么需求或者你也有分享的好东西,欢迎在issue中提出来.
+# Qingyan — Personal site
 
-## 系统工具
+阿岩的个人主页与博客，托管于 GitHub Pages。
 
+## 写一篇新文章
 
+在 `_posts` 目录新建 Markdown 文件，文件名格式：
 
-## 常用软件
+```text
+YYYY-MM-DD-english-slug.md
+```
 
-## 科研工具
-##### MATLAB
+文章开头使用以下 Front Matter：
 
-##### Pycharm
+```yaml
+---
+layout: post
+title: "文章标题"
+description: "一句话摘要"
+tags: [标签一, 标签二]
+reading_time: 5
+---
+```
 
-## 工程软件
+推送到 `main` 后，GitHub Pages 会自动构建并发布。
 
-## 办公软件
-
-#### Office
-#### 系统激活
-
-## 提交问题
-
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.

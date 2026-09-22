@@ -1,0 +1,21 @@
+---
+layout: default
+---
+<article class="post shell">
+  <header class="post-header reveal">
+    <a class="back-link" href="{{ '/blog/' | relative_url }}">← 返回文章</a>
+    <div class="post-meta">
+      <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: '%Y 年 %m 月 %d 日' }}</time>
+      {% if page.reading_time %}<span>{{ page.reading_time }} 分钟阅读</span>{% endif %}
+    </div>
+    <h1>{{ page.title }}</h1>
+    {% if page.description %}<p class="post-deck">{{ page.description }}</p>{% endif %}
+    {% if page.tags %}<div class="tag-row">{% for tag in page.tags %}<span>{{ tag }}</span>{% endfor %}</div>{% endif %}
+  </header>
+  <div class="post-content reveal">{{ content }}</div>
+  <footer class="post-footer">
+    <p>感谢阅读。</p>
+    <a class="button button-primary" href="{{ '/blog/' | relative_url }}">继续浏览文章 <span aria-hidden="true">→</span></a>
+  </footer>
+</article>
+
