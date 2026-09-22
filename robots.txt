@@ -3,4 +3,5 @@ layout: null
 ---
 User-agent: *
 Allow: /
+Disallow: /admin/
 Sitemap: {{ '/sitemap.xml' | absolute_url }}

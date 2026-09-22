@@ -1,0 +1,93 @@
+# yaml-language-server: $schema=https://unpkg.com/@sveltia/cms@0.218.0/schema/sveltia-cms.json
+
+backend:
+  name: github
+  repo: kenyon01/kenyon01.github.io
+  branch: main
+
+site_url: https://kenyon01.github.io
+display_url: https://kenyon01.github.io
+logout_redirect_url: https://kenyon01.github.io
+app_title: Qingyan 写作后台
+logo:
+  src: /assets/favicon.svg
+  show_in_header: true
+
+media_folder: /assets/uploads
+public_folder: /assets/uploads
+
+slug:
+  encoding: unicode
+  clean_accents: true
+  sanitize_replacement: "-"
+  trim: true
+  lowercase: true
+  timezone: local
+
+collections:
+  - name: posts
+    label: 文章
+    label_singular: 文章
+    description: 在这里撰写并发布博客文章。保存后会提交到 GitHub，并自动触发网站构建。
+    folder: /_posts
+    extension: md
+    format: frontmatter
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    summary: "{{title}} · {{date}}"
+    sortable_fields:
+      fields: [date, title]
+      default:
+        field: date
+        direction: descending
+    view_filters:
+      - label: 已发布
+        field: published
+        pattern: true
+      - label: 草稿
+        field: published
+        pattern: false
+    fields:
+      - label: 页面布局
+        name: layout
+        widget: hidden
+        default: post
+      - label: 标题
+        name: title
+        widget: string
+        hint: 文章的主标题，也是默认文件名的一部分。
+      - label: 摘要
+        name: description
+        widget: text
+        hint: 用一两句话说明文章内容，会显示在文章列表和搜索结果中。
+      - label: 发布日期
+        name: date
+        widget: datetime
+        type: date
+        default: "{{now}}"
+      - label: 发布
+        name: published
+        widget: boolean
+        default: true
+        required: false
+        hint: 关闭后文章会保存到仓库，但不会出现在网站中。
+      - label: 标签
+        name: tags
+        widget: list
+        required: false
+        hint: 例如：量化、AI、工程实践。
+        field:
+          label: 标签
+          name: tag
+          widget: string
+      - label: 预计阅读时间
+        name: reading_time
+        widget: number
+        value_type: int
+        min: 1
+        max: 60
+        default: 5
+        hint: 单位为分钟。
+      - label: 正文
+        name: body
+        widget: richtext
+        hint: 支持 Markdown、代码块、链接和图片。
