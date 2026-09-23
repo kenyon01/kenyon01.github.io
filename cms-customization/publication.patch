@@ -1,0 +1,291 @@
+diff --git a/src/lib/components/contents/list/entry-list-item-cells.svelte b/src/lib/components/contents/list/entry-list-item-cells.svelte
+index 01635b0..5ec60a2 100644
+--- a/src/lib/components/contents/list/entry-list-item-cells.svelte
++++ b/src/lib/components/contents/list/entry-list-item-cells.svelte
+@@ -8,6 +8,7 @@
+   import { Checkbox, GridCell, Icon, TruncatedText } from '@sveltia/ui';
+ 
+   import Image from '$lib/components/assets/shared/image.svelte';
++  import PublicationActions from './publication-actions.svelte';
+   import StatusBadge from '$lib/components/workflow/status-badge.svelte';
+   import { selectedEntryIdSet } from '$lib/services/contents/collection/entries';
+   import {
+@@ -93,13 +94,19 @@
+     </TruncatedText>
+   </div>
+ </GridCell>
+-<GridCell class="status">
+-  {#if workflow}
++<GridCell class={collection.name === 'posts' ? 'status publication-cell' : 'status'}>
++  {#if collection.name === 'posts' && !workflow}
++    <PublicationActions {collection} {entry} />
++  {:else if workflow}
+     <StatusBadge status={workflow.status} />
+   {/if}
+ </GridCell>
+ 
+ <style>
++  :global(.grid-cell.publication-cell) {
++    height: auto !important;
++    overflow: visible !important;
++  }
+   .label {
+     :global {
+       .icon.home {
+diff --git a/src/lib/components/contents/list/publication-actions.svelte b/src/lib/components/contents/list/publication-actions.svelte
+new file mode 100644
+index 0000000..b68f0fd
+--- /dev/null
++++ b/src/lib/components/contents/list/publication-actions.svelte
+@@ -0,0 +1,135 @@
++<script>
++  import { goto } from '$lib/services/app/navigation';
++  import { isPublished, setPublication } from '$lib/services/contents/entry/publication';
++
++  /** @import { Entry, InternalEntryCollection } from '$lib/types/private'; */
++  /** @type {{ collection: InternalEntryCollection, entry: Entry }} */
++  let { collection, entry } = $props();
++  let busy = $state(false);
++  let message = $state('');
++  let failed = $state(false);
++  const published = $derived(isPublished(entry, collection));
++
++  /** @param {boolean} next Target visibility. */
++  const changePublication = async (next) => {
++    if (busy) return;
++    busy = true;
++    failed = false;
++    message = next ? '正在上架…' : '正在下架…';
++    try {
++      await setPublication(collection, entry, next);
++      message = '已保存，网站更新中';
++    } catch (error) {
++      failed = true;
++      message =
++        error instanceof Error && error.message === 'save_conflict'
++          ? '文章有新修改，请刷新后重试'
++          : error instanceof Error && error.message === 'validation_failed'
++            ? '请先编辑并补全必填内容'
++            : '操作失败，请检查网络后重试';
++    } finally {
++      busy = false;
++    }
++  };
++</script>
++
++<div class="publication">
++  <span class:published class="badge">{published ? '已上架' : '未上架'}</span>
++  <div class="actions">
++    <button
++      disabled={busy || published}
++      onclick={(event) => {
++        event.stopPropagation();
++        changePublication(true);
++      }}
++      onkeydown={(event) => event.stopPropagation()}>上架</button
++    >
++    <button
++      disabled={busy || !published}
++      onclick={(event) => {
++        event.stopPropagation();
++        changePublication(false);
++      }}
++      onkeydown={(event) => event.stopPropagation()}>下架</button
++    >
++    <button
++      disabled={busy}
++      onclick={(event) => {
++        event.stopPropagation();
++        goto(`/collections/${collection.name}/entries/${entry.subPath}`, {
++          transitionType: 'forwards',
++        });
++      }}
++      onkeydown={(event) => event.stopPropagation()}>编辑</button
++    >
++  </div>
++  {#if message}<span class="message" class:failed role="status">{message}</span>{/if}
++</div>
++
++<style>
++  :global(.grid-view) .publication {
++    min-width: 0;
++    max-width: 100%;
++    justify-content: flex-start;
++  }
++  :global(.grid-view) .actions { flex-wrap: wrap; }
++  .publication {
++    display: flex;
++    flex-wrap: wrap;
++    justify-content: flex-end;
++    align-items: center;
++    gap: 6px;
++    min-width: 200px;
++    padding: 5px 0;
++  }
++  .badge {
++    border: 1px solid #87939b;
++    color: inherit;
++    border-radius: 12px;
++    padding: 2px 7px;
++    font-size: 12px;
++  }
++  .badge.published {
++    color: #15966b;
++    border-color: #15966b;
++  }
++  .actions {
++    display: flex;
++    gap: 5px;
++  }
++  button {
++    font: inherit;
++    font-size: 13px;
++    border: 1px solid #87939b;
++    border-radius: 5px;
++    padding: 5px 8px;
++    background: transparent;
++    color: inherit;
++    cursor: pointer;
++  }
++  button:hover:not(:disabled) {
++    background: #80808030;
++  }
++  button:disabled {
++    opacity: 0.35;
++    cursor: default;
++  }
++  button:focus-visible {
++    outline: 2px solid #4285f4;
++    outline-offset: 2px;
++  }
++  .message {
++    flex-basis: 100%;
++    white-space: normal;
++    font-size: 12px;
++  }
++  .failed {
++    color: #e97171;
++  }
++  @media (max-width: 600px) {
++    .publication {
++      min-width: 155px;
++      max-width: 180px;
++    }
++  }
++</style>
+diff --git a/src/lib/services/contents/draft/create/index.js b/src/lib/services/contents/draft/create/index.js
+index 4b43dd2..b6f8ccd 100644
+--- a/src/lib/services/contents/draft/create/index.js
++++ b/src/lib/services/contents/draft/create/index.js
+@@ -199,6 +199,12 @@ export const buildDraft = ({
+   );
+ 
+   if (!isNew) {
++    // Existing Jekyll posts without this field are public; only new posts default to hidden.
++    if (collectionName === 'posts' && fields.some(({ name }) => name === 'published')) {
++      Object.values(originalValues).forEach((content) => {
++        if (content.published === undefined) content.published = true;
++      });
++    }
+     // Existing entries can predate the current field configuration: a field added since, or an
+     // optional field left empty and later made required, is simply absent from the file. Fill those
+     // in so the editor shows their default values and the validator sees them
+diff --git a/src/lib/services/contents/draft/create/index.test.js b/src/lib/services/contents/draft/create/index.test.js
+index a2f0418..263c5b1 100644
+--- a/src/lib/services/contents/draft/create/index.test.js
++++ b/src/lib/services/contents/draft/create/index.test.js
+@@ -40,7 +40,19 @@ const { createProxy } = await import('$lib/services/contents/draft/create/proxy.
+ const { getDefaultValues } = await import('$lib/services/contents/draft/defaults');
+ const { cmsConfig } = await import('$lib/services/config');
+ const { nestedFilterPath } = await import('$lib/services/contents/collection/nested');
+-const { createDraft, getOriginalPath, getSlugEditorProp } = await import('.');
++const { buildDraft, createDraft, getOriginalPath, getSlugEditorProp } = await import('.');
++
++it.each([undefined, true, false])('preserves existing Jekyll publication state %s', (published) => {
++  const collection = {
++    name: 'posts', _type: 'entry',
++    fields: [{ name: 'published', widget: 'hidden', default: false }],
++    _i18n: { allLocales: ['en'], initialLocales: ['en'], defaultLocale: 'en', canonicalSlug: { key: 'translationKey' } },
++  };
++  const draft = buildDraft({ collection, originalEntry: {
++    id: 'post', slug: 'post', locales: { en: { slug: 'post', content: { title: 'Old post', ...(published === undefined ? {} : { published }) } } },
++  } });
++  expect(draft.currentValues.en.published).toBe(published !== false);
++});
+ /**
+  * Fake entry draft state.
+  * @type {{ current: any }}
+diff --git a/src/lib/services/contents/entry/publication.js b/src/lib/services/contents/entry/publication.js
+new file mode 100644
+index 0000000..dc38253
+--- /dev/null
++++ b/src/lib/services/contents/entry/publication.js
+@@ -0,0 +1,28 @@
++import { buildDraft } from '$lib/services/contents/draft/create';
++import { saveEntry } from '$lib/services/contents/draft/save';
++
++/** @import { Entry, InternalEntryCollection } from '$lib/types/private'; */
++
++/**
++ * Jekyll treats an absent published field as published.
++ * @param {Entry} entry Entry.
++ * @param {InternalEntryCollection} collection Collection.
++ * @returns {boolean} Whether the entry is published.
++ */
++export const isPublished = (entry, collection) =>
++  entry.locales[collection._i18n.defaultLocale]?.content.published !== false;
++
++/**
++ * Reuse the CMS save path, including conflict detection and store updates.
++ * @param {InternalEntryCollection} collection Collection.
++ * @param {Entry} entry Persisted entry.
++ * @param {boolean} published Target visibility.
++ * @returns {Promise<Entry>} Saved entry.
++ */
++export const setPublication = async (collection, entry, published) => {
++  const draft = buildDraft({ collection, originalEntry: entry });
++  Object.values(draft.currentValues).forEach((values) => {
++    values.published = published;
++  });
++  return saveEntry({ draft, skipCI: false });
++};
+diff --git a/src/lib/services/contents/entry/publication.test.js b/src/lib/services/contents/entry/publication.test.js
+new file mode 100644
+index 0000000..5006c23
+--- /dev/null
++++ b/src/lib/services/contents/entry/publication.test.js
+@@ -0,0 +1,34 @@
++import { beforeEach, expect, test, vi } from 'vitest';
++import { buildDraft } from '$lib/services/contents/draft/create';
++import { saveEntry } from '$lib/services/contents/draft/save';
++import { isPublished, setPublication } from './publication';
++
++vi.mock('$lib/services/contents/draft/create', () => ({ buildDraft: vi.fn() }));
++vi.mock('$lib/services/contents/draft/save', () => ({ saveEntry: vi.fn() }));
++
++const collection = { _i18n: { defaultLocale: '_default' } };
++const entry = { locales: { _default: { content: { title: 'Article', published: false } } } };
++
++beforeEach(() => vi.resetAllMocks());
++
++test.each([true, false, undefined])('badge matches Jekyll published=%s', (published) => {
++  expect(isPublished({ locales: { _default: { content: { published } } } }, collection))
++    .toBe(published !== false);
++});
++
++test.each([true, false])('changes visibility to %s without mutating persisted content', async (next) => {
++  const draft = { currentValues: { _default: structuredClone(entry.locales._default.content) } };
++  buildDraft.mockReturnValue(draft);
++  saveEntry.mockResolvedValue({ saved: true });
++  expect(await setPublication(collection, entry, next)).toEqual({ saved: true });
++  expect(draft.currentValues._default).toEqual({ title: 'Article', published: next });
++  expect(entry.locales._default.content.published).toBe(false);
++  expect(saveEntry).toHaveBeenCalledWith({ draft, skipCI: false });
++});
++
++test.each(['save_conflict', 'saving_failed', 'validation_failed'])('propagates %s without optimistic publication', async (reason) => {
++  buildDraft.mockReturnValue({ currentValues: { _default: structuredClone(entry.locales._default.content) } });
++  saveEntry.mockRejectedValue(new Error(reason));
++  await expect(setPublication(collection, entry, true)).rejects.toThrow(reason);
++  expect(entry.locales._default.content.published).toBe(false);
++});

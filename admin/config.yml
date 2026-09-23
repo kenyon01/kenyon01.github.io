@@ -6,7 +6,7 @@ backend:
   branch: main
   base_url: https://sveltia-cms-auth.1733128196.workers.dev
 
-publish_mode: editorial_workflow
+publish_mode: simple
 
 site_url: https://kenyon01.github.io
 display_url: https://kenyon01.github.io
@@ -31,7 +31,7 @@ collections:
   - name: posts
     label: 文章
     label_singular: 文章
-    description: 保存只保留草稿，不会上线。完善后在编辑器或发布流程中点击发布，网站才会更新。
+    description: 新文章保存后为未上架。在列表点击上架后公开，点击下架可隐藏。已上架文章的编辑保存会更新网站。
     folder: /_posts
     extension: md
     format: frontmatter
@@ -63,7 +63,7 @@ collections:
       - label: 网站可见
         name: published
         widget: hidden
-        default: true
+        default: false
       - label: 标签
         name: tags
         widget: list
