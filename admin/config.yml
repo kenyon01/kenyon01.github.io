@@ -6,6 +6,8 @@ backend:
   branch: main
   base_url: https://sveltia-cms-auth.1733128196.workers.dev
 
+publish_mode: editorial_workflow
+
 site_url: https://kenyon01.github.io
 display_url: https://kenyon01.github.io
 logout_redirect_url: https://kenyon01.github.io
@@ -29,7 +31,7 @@ collections:
   - name: posts
     label: 文章
     label_singular: 文章
-    description: 在这里撰写并发布博客文章。保存后会提交到 GitHub，并自动触发网站构建。
+    description: 保存只保留草稿，不会上线。完善后在编辑器或发布流程中点击发布，网站才会更新。
     folder: /_posts
     extension: md
     format: frontmatter
@@ -40,13 +42,6 @@ collections:
       default:
         field: date
         direction: descending
-    view_filters:
-      - label: 已发布
-        field: published
-        pattern: true
-      - label: 草稿
-        field: published
-        pattern: false
     fields:
       - label: 页面布局
         name: layout
@@ -65,12 +60,10 @@ collections:
         widget: datetime
         type: date
         default: "{{now}}"
-      - label: 发布
+      - label: 网站可见
         name: published
-        widget: boolean
+        widget: hidden
         default: true
-        required: false
-        hint: 关闭后文章会保存到仓库，但不会出现在网站中。
       - label: 标签
         name: tags
         widget: list
