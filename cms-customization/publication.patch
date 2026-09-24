@@ -214,10 +214,10 @@ index 01635b0..5ec60a2 100644
        .icon.home {
 diff --git a/src/lib/components/contents/list/publication-actions.svelte b/src/lib/components/contents/list/publication-actions.svelte
 new file mode 100644
-index 0000000..f6b8f92
+index 0000000..eafc463
 --- /dev/null
 +++ b/src/lib/components/contents/list/publication-actions.svelte
-@@ -0,0 +1,196 @@
+@@ -0,0 +1,197 @@
 +<script>
 +  import { goto } from '$lib/services/app/navigation';
 +  import {
@@ -235,19 +235,13 @@ index 0000000..f6b8f92
 +  let message = $state('');
 +  let failed = $state(false);
 +  let reading = $state(false);
++  let confirming = $state(false);
 +  const published = $derived(isPublished(entry, collection));
 +  const publicAccess = $derived(isPublic(entry, collection));
 +
 +  const changeVisibility = async () => {
 +    if (busy) return;
-+    if (
-+      !window.confirm(
-+        publicAccess
-+          ? '设为私有后，网站将在同步完成后移除文章。曾公开的内容仍可能存在于历史记录中。继续？'
-+          : '设为公开后，上架的文章及其引用图片将复制到公开仓库，所有人都能读取。继续？',
-+      )
-+    )
-+      return;
++    confirming = false;
 +    busy = true;
 +    failed = false;
 +    try {
@@ -293,7 +287,7 @@ index 0000000..f6b8f92
 +      disabled={busy}
 +      onclick={(event) => {
 +        event.stopPropagation();
-+        changeVisibility();
++        confirming = !confirming;
 +      }}
 +      onkeydown={(event) => event.stopPropagation()}
 +      >{publicAccess ? '设为私有' : '设为公开'}</button
@@ -333,6 +327,13 @@ index 0000000..f6b8f92
 +      onkeydown={(event) => event.stopPropagation()}>编辑</button
 +    >
 +  </div>
++  {#if confirming}
++    <div class="message" role="alert">
++      {publicAccess ? '转私有后需等待同步撤下；曾公开的历史副本无法收回。' : '公开并上架后，正文及引用图片将对所有人可见。'}
++      <button disabled={busy} onclick={(event) => { event.stopPropagation(); changeVisibility(); }} onkeydown={(event) => event.stopPropagation()}>确认{publicAccess ? '设为私有' : '设为公开'}</button>
++      <button onclick={(event) => { event.stopPropagation(); confirming = false; }} onkeydown={(event) => event.stopPropagation()}>取消</button>
++    </div>
++  {/if}
 +  {#if message}<span class="message" class:failed role="status">{message} <a href="https://github.com/kenyon01/blog-private/actions" target="_blank" rel="noopener noreferrer" onclick={(event) => event.stopPropagation()} onkeydown={(event) => event.stopPropagation()}>查看同步结果</a></span>{/if}
 +</div>
 +{#if reading}<ArticleReader
