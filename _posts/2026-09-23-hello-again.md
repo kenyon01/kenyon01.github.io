@@ -4,6 +4,7 @@ title: "重新开始写作"
 description: "把旧的资源导航站收起来，重新搭一张属于自己的书桌。"
 date: 2026-09-23
 published: true
+visibility: public
 tags: [随笔, 建站]
 reading_time: 3
 ---
