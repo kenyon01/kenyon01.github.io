@@ -23,7 +23,7 @@ try {
     Invoke-Checked git apply $patch
   }
   Invoke-Checked pnpm install --frozen-lockfile
-  Invoke-Checked pnpm exec vitest run --project unit src/lib/services/contents/entry/publication.test.js src/lib/services/contents/draft/save/conflict.test.js src/lib/services/contents/draft/create/index.test.js src/lib/components/contents/list/article-reader.test.js
+  Invoke-Checked pnpm exec vitest run --project unit src/lib/services/contents/entry/publication.test.js src/lib/services/contents/draft/save/conflict.test.js src/lib/services/contents/draft/create/index.test.js src/lib/components/contents/list/article-reader.test.js src/lib/components/contents/list/publication-actions.test.js
   Invoke-Checked pnpm build
   $vendor = Join-Path $repoRoot 'admin/vendor'
   New-Item -ItemType Directory -Force -Path $vendor | Out-Null

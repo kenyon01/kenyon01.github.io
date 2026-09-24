@@ -415,6 +415,56 @@ index 0000000..eafc463
 +    }
 +  }
 +</style>
+diff --git a/src/lib/components/contents/list/publication-actions.test.js b/src/lib/components/contents/list/publication-actions.test.js
+new file mode 100644
+index 0000000..52e3939
+--- /dev/null
++++ b/src/lib/components/contents/list/publication-actions.test.js
+@@ -0,0 +1,44 @@
++// @vitest-environment happy-dom
++import { afterEach, expect, test, vi } from 'vitest';
++import { mount, unmount, tick } from 'svelte';
++import PublicationActions from './publication-actions.svelte';
++import { setVisibility } from '$lib/services/contents/entry/publication';
++
++vi.mock('$lib/services/app/navigation', () => ({ goto: vi.fn() }));
++vi.mock('$lib/services/contents/entry/publication', () => ({
++  isPublished: () => true, isPublic: () => false, setPublication: vi.fn(), setVisibility: vi.fn(),
++}));
++vi.mock('$lib/services/assets', () => ({ getAssetByPath: vi.fn() }));
++vi.mock('$lib/services/assets/info', () => ({ getAssetBlobURL: vi.fn() }));
++let component;
++const button = (label) => [...document.querySelectorAll('button')].find((element) => element.textContent.trim() === label);
++const open = () => {
++  component = mount(PublicationActions, { target: document.body, props: {
++    collection: { name: 'posts', _i18n: { defaultLocale: '_default' } },
++    entry: { subPath: 'sample', locales: { _default: { content: { title: 'Example' } } } },
++  } });
++};
++afterEach(async () => { if (component) await unmount(component); document.body.innerHTML = ''; vi.clearAllMocks(); });
++
++test('public toggle needs explicit inline confirmation; cancel never saves', async () => {
++  open();
++  button('设为公开').click();
++  await tick();
++  expect(button('确认设为公开')).toBeTruthy();
++  expect(setVisibility).not.toHaveBeenCalled();
++  button('取消').click();
++  await tick();
++  expect(button('确认设为公开')).toBeUndefined();
++  expect(setVisibility).not.toHaveBeenCalled();
++});
++
++test('confirm saves visibility and reports a failed save without changing the badge', async () => {
++  setVisibility.mockRejectedValue(new Error('offline'));
++  open();
++  button('设为公开').click();
++  await tick();
++  button('确认设为公开').click();
++  await vi.waitFor(() => expect(document.body.textContent).toContain('权限保存失败'));
++  expect(setVisibility).toHaveBeenCalledTimes(1);
++  expect(document.body.textContent).toContain('已上架 · 私有');
++});
 diff --git a/src/lib/services/contents/draft/create/index.js b/src/lib/services/contents/draft/create/index.js
 index 4b43dd2..b6f8ccd 100644
 --- a/src/lib/services/contents/draft/create/index.js
