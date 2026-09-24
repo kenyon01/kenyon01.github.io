@@ -2,7 +2,7 @@
 
 backend:
   name: github
-  repo: kenyon01/kenyon01.github.io
+  repo: kenyon01/blog-private
   branch: main
   base_url: https://sveltia-cms-auth.1733128196.workers.dev
 
@@ -16,8 +16,8 @@ logo:
   src: /assets/favicon.svg
   show_in_header: true
 
-media_folder: /assets/uploads
-public_folder: /assets/uploads
+media_folder: /article-media
+public_folder: /article-media
 
 slug:
   encoding: unicode
@@ -31,7 +31,7 @@ collections:
   - name: posts
     label: 文章
     label_singular: 文章
-    description: 新文章保存后为未上架。在列表点击上架后公开，点击下架可隐藏。已上架文章的编辑保存会更新网站。
+    description: 新文章默认私有且未上架。私有文章仅在登录后台后阅读；只有已上架且公开的文章同步到博客。状态切换需等待网站更新。
     folder: /_posts
     extension: md
     format: frontmatter
@@ -64,6 +64,14 @@ collections:
         name: published
         widget: hidden
         default: false
+      - label: 阅读权限
+        name: visibility
+        widget: select
+        default: private
+        options:
+          - {label: 私有（仅站主后台可读）, value: private}
+          - {label: 公开（上架后所有人可读）, value: public}
+        hint: 私有正文和新上传图片保存在私有仓库。曾公开的内容可能仍存在于公开历史记录中。
       - label: 标签
         name: tags
         widget: list

@@ -1,1 +1,3 @@
 .cms-build/
+.private-storage/
+.private-secrets/

@@ -1,3 +1,183 @@
+diff --git a/src/lib/components/contents/list/article-reader.svelte b/src/lib/components/contents/list/article-reader.svelte
+new file mode 100644
+index 0000000..430afd9
+--- /dev/null
++++ b/src/lib/components/contents/list/article-reader.svelte
+@@ -0,0 +1,133 @@
++<script>
++  import { onMount } from 'svelte';
++  import DOMPurify from 'isomorphic-dompurify';
++  import { Marked } from 'marked';
++  import { getAssetByPath } from '$lib/services/assets';
++  import { getAssetBlobURL } from '$lib/services/assets/info';
++
++  let { collection, entry, onClose } = $props();
++  let dialog;
++  let html = $state('');
++  let error = $state('');
++  const content = $derived(entry.locales[collection._i18n.defaultLocale].content);
++
++  onMount(() => {
++    let active = true;
++    dialog.showModal();
++    const render = async () => {
++      // No raw HTML or external embeds; images use authenticated repository reads.
++      const markdown = new Marked({
++        renderer: {
++          html: () => '',
++          image: ({ href }) =>
++            `<span data-reader-image="${encodeURIComponent(href)}">[图片]</span>`,
++        },
++      });
++      const safe = DOMPurify.sanitize(await markdown.parse(String(content.body ?? '')));
++      const document = new DOMParser().parseFromString(safe, 'text/html');
++      await Promise.all(
++        [...document.querySelectorAll('[data-reader-image]')].map(async (placeholder) => {
++          const value = decodeURIComponent(placeholder.getAttribute('data-reader-image'));
++          if (!value.startsWith('/article-media/')) {
++            placeholder.textContent = '[外部图片未加载]';
++            return;
++          }
++          const asset = getAssetByPath({ value, entry, collectionName: collection.name });
++        const url = asset ? await getAssetBlobURL(asset).catch(() => undefined) : undefined;
++          if (!url?.startsWith('blob:')) {
++            placeholder.textContent = '[图片加载失败]';
++            return;
++          }
++          const image = document.createElement('img');
++          image.src = url;
++          image.alt = '文章图片';
++          placeholder.replaceWith(image);
++        }),
++      );
++      document.querySelectorAll('a').forEach((link) => {
++        link.target = '_blank';
++        link.rel = 'noopener noreferrer';
++        if (!/^https?:\/\//i.test(link.getAttribute('href') ?? '')) link.removeAttribute('href');
++      });
++      if (active) html = document.body.innerHTML;
++    };
++    render().catch(() => {
++      if (active) error = '内容加载失败，请关闭后重试。';
++    });
++    return () => {
++      active = false;
++    };
++  });
++</script>
++
++<dialog
++  bind:this={dialog}
++  onclose={onClose}
++  onclick={(event) => event.stopPropagation()}
++  onkeydown={(event) => event.stopPropagation()}
++  aria-label="阅读文章"
++>
++  <header>
++    <span>后台阅读 · {content.visibility === 'public' ? '公开' : '私有'}</span><button
++      onclick={() => dialog.close()}>关闭阅读</button
++    >
++  </header>
++  <article>
++    <h1>{content.title}</h1>
++    <p class="description">{content.description}</p>
++    {#if error}<p role="alert">{error}</p>{:else if html}<div class="body">
++        {@html html}
++      </div>{:else}<p role="status">加载中…</p>{/if}
++  </article>
++</dialog>
++
++<style>
++  dialog {
++    width: min(800px, 92vw);
++    max-height: 88vh;
++    padding: 24px;
++    border: 1px solid #666;
++    border-radius: 12px;
++    background: #171b20;
++    color: #e9eef1;
++    text-align: left;
++    white-space: normal;
++  }
++  dialog::backdrop {
++    background: #0009;
++  }
++  header {
++    display: flex;
++    align-items: center;
++    justify-content: space-between;
++    gap: 16px;
++  }
++  button {
++    padding: 8px 12px;
++    cursor: pointer;
++  }
++  article {
++    line-height: 1.8;
++    overflow-wrap: anywhere;
++  }
++  h1 {
++    font-size: 30px;
++    line-height: 1.3;
++    margin: 32px 0 16px;
++  }
++  .description {
++    color: #9faeb9;
++  }
++  .body :global(img) {
++    max-width: 100%;
++    height: auto;
++  }
++  .body :global(pre) {
++    overflow: auto;
++    padding: 16px;
++    background: #0b0f14;
++  }
++  .body :global(a) {
++    color: #78b9ff;
++  }
++</style>
+diff --git a/src/lib/components/contents/list/article-reader.test.js b/src/lib/components/contents/list/article-reader.test.js
+new file mode 100644
+index 0000000..32e9a9d
+--- /dev/null
++++ b/src/lib/components/contents/list/article-reader.test.js
+@@ -0,0 +1,35 @@
++// @vitest-environment happy-dom
++import { afterEach, expect, test, vi } from 'vitest';
++import { mount, unmount } from 'svelte';
++import ArticleReader from './article-reader.svelte';
++import { getAssetBlobURL } from '$lib/services/assets/info';
++
++vi.mock('$lib/services/assets', () => ({ getAssetByPath: vi.fn(() => ({ path: 'article-media/a.png' })) }));
++vi.mock('$lib/services/assets/info', () => ({ getAssetBlobURL: vi.fn() }));
++let component;
++afterEach(async () => { if (component) await unmount(component); document.body.innerHTML = ''; vi.clearAllMocks(); });
++
++const open = (body) => {
++  HTMLDialogElement.prototype.showModal = vi.fn();
++  component = mount(ArticleReader, { target: document.body, props: {
++    collection: { name: 'posts', _i18n: { defaultLocale: '_default' } },
++    entry: { locales: { _default: { content: { title: 'Private title', body, visibility: 'private' } } } },
++    onClose: vi.fn(),
++  } });
++};
++
++test('a failed image does not hide private article text', async () => {
++  getAssetBlobURL.mockRejectedValue(new Error('network failure'));
++  open('Readable body\n\n![image](/article-media/a.png)');
++  await vi.waitFor(() => expect(document.body.textContent).toContain('图片加载失败'));
++  expect(document.body.textContent).toContain('Readable body');
++  expect(document.querySelector('img')).toBeNull();
++});
++
++test('reader strips active HTML, unsafe links and external image requests', async () => {
++  open('Readable body\n\n<script>alert(1)</script>\n\n![external](https://example.com/tracker.png)\n\n[unsafe](javascript:alert(1))');
++  await vi.waitFor(() => expect(document.body.textContent).toContain('外部图片未加载'));
++  expect(document.querySelector('script,img,iframe')).toBeNull();
++  expect(document.querySelector('a[href^="javascript:"]')).toBeNull();
++  expect(getAssetBlobURL).not.toHaveBeenCalled();
++});
 diff --git a/src/lib/components/contents/list/entry-list-item-cells.svelte b/src/lib/components/contents/list/entry-list-item-cells.svelte
 index 01635b0..5ec60a2 100644
 --- a/src/lib/components/contents/list/entry-list-item-cells.svelte
@@ -34,13 +214,19 @@ index 01635b0..5ec60a2 100644
        .icon.home {
 diff --git a/src/lib/components/contents/list/publication-actions.svelte b/src/lib/components/contents/list/publication-actions.svelte
 new file mode 100644
-index 0000000..b68f0fd
+index 0000000..f6b8f92
 --- /dev/null
 +++ b/src/lib/components/contents/list/publication-actions.svelte
-@@ -0,0 +1,135 @@
+@@ -0,0 +1,196 @@
 +<script>
 +  import { goto } from '$lib/services/app/navigation';
-+  import { isPublished, setPublication } from '$lib/services/contents/entry/publication';
++  import {
++    isPublished,
++    isPublic,
++    setPublication,
++    setVisibility,
++  } from '$lib/services/contents/entry/publication';
++  import ArticleReader from './article-reader.svelte';
 +
 +  /** @import { Entry, InternalEntryCollection } from '$lib/types/private'; */
 +  /** @type {{ collection: InternalEntryCollection, entry: Entry }} */
@@ -48,7 +234,32 @@ index 0000000..b68f0fd
 +  let busy = $state(false);
 +  let message = $state('');
 +  let failed = $state(false);
++  let reading = $state(false);
 +  const published = $derived(isPublished(entry, collection));
++  const publicAccess = $derived(isPublic(entry, collection));
++
++  const changeVisibility = async () => {
++    if (busy) return;
++    if (
++      !window.confirm(
++        publicAccess
++          ? '设为私有后，网站将在同步完成后移除文章。曾公开的内容仍可能存在于历史记录中。继续？'
++          : '设为公开后，上架的文章及其引用图片将复制到公开仓库，所有人都能读取。继续？',
++      )
++    )
++      return;
++    busy = true;
++    failed = false;
++    try {
++      await setVisibility(collection, entry, publicAccess ? 'private' : 'public');
++      message = '权限已保存，公开网站需等待同步完成';
++    } catch {
++      failed = true;
++      message = '权限保存失败，请刷新并重试';
++    } finally {
++      busy = false;
++    }
++  };
 +
 +  /** @param {boolean} next Target visibility. */
 +  const changePublication = async (next) => {
@@ -58,7 +269,7 @@ index 0000000..b68f0fd
 +    message = next ? '正在上架…' : '正在下架…';
 +    try {
 +      await setPublication(collection, entry, next);
-+      message = '已保存，网站更新中';
++      message = '已保存，公开网站需等待同步完成';
 +    } catch (error) {
 +      failed = true;
 +      message =
@@ -74,8 +285,27 @@ index 0000000..b68f0fd
 +</script>
 +
 +<div class="publication">
-+  <span class:published class="badge">{published ? '已上架' : '未上架'}</span>
++  <span class:published class="badge"
++    >{published ? '已上架' : '未上架'} · {publicAccess ? '公开' : '私有'}</span
++  >
 +  <div class="actions">
++    <button
++      disabled={busy}
++      onclick={(event) => {
++        event.stopPropagation();
++        changeVisibility();
++      }}
++      onkeydown={(event) => event.stopPropagation()}
++      >{publicAccess ? '设为私有' : '设为公开'}</button
++    >
++    <button
++      disabled={busy || !published}
++      onclick={(event) => {
++        event.stopPropagation();
++        reading = true;
++      }}
++      onkeydown={(event) => event.stopPropagation()}>阅读</button
++    >
 +    <button
 +      disabled={busy || published}
 +      onclick={(event) => {
@@ -103,8 +333,15 @@ index 0000000..b68f0fd
 +      onkeydown={(event) => event.stopPropagation()}>编辑</button
 +    >
 +  </div>
-+  {#if message}<span class="message" class:failed role="status">{message}</span>{/if}
++  {#if message}<span class="message" class:failed role="status">{message} <a href="https://github.com/kenyon01/blog-private/actions" target="_blank" rel="noopener noreferrer" onclick={(event) => event.stopPropagation()} onkeydown={(event) => event.stopPropagation()}>查看同步结果</a></span>{/if}
 +</div>
++{#if reading}<ArticleReader
++    {collection}
++    {entry}
++    onClose={() => {
++      reading = false;
++    }}
++  />{/if}
 +
 +<style>
 +  :global(.grid-view) .publication {
@@ -112,7 +349,9 @@ index 0000000..b68f0fd
 +    max-width: 100%;
 +    justify-content: flex-start;
 +  }
-+  :global(.grid-view) .actions { flex-wrap: wrap; }
++  :global(.grid-view) .actions {
++    flex-wrap: wrap;
++  }
 +  .publication {
 +    display: flex;
 +    flex-wrap: wrap;
@@ -135,6 +374,8 @@ index 0000000..b68f0fd
 +  }
 +  .actions {
 +    display: flex;
++    flex-wrap: wrap;
++    justify-content: flex-end;
 +    gap: 5px;
 +  }
 +  button {
@@ -217,10 +458,10 @@ index a2f0418..263c5b1 100644
   * @type {{ current: any }}
 diff --git a/src/lib/services/contents/entry/publication.js b/src/lib/services/contents/entry/publication.js
 new file mode 100644
-index 0000000..dc38253
+index 0000000..8200163
 --- /dev/null
 +++ b/src/lib/services/contents/entry/publication.js
-@@ -0,0 +1,28 @@
+@@ -0,0 +1,42 @@
 +import { buildDraft } from '$lib/services/contents/draft/create';
 +import { saveEntry } from '$lib/services/contents/draft/save';
 +
@@ -234,6 +475,20 @@ index 0000000..dc38253
 + */
 +export const isPublished = (entry, collection) =>
 +  entry.locales[collection._i18n.defaultLocale]?.content.published !== false;
++
++/** Missing visibility is private (fail closed). */
++export const isPublic = (entry, collection) =>
++  entry.locales[collection._i18n.defaultLocale]?.content.visibility === 'public';
++
++/** Change access without changing the publication state. */
++export const setVisibility = async (collection, entry, visibility) => {
++  if (!['public', 'private'].includes(visibility)) throw new Error('invalid_visibility');
++  const draft = buildDraft({ collection, originalEntry: entry });
++  Object.values(draft.currentValues).forEach((values) => {
++    values.visibility = visibility;
++  });
++  return saveEntry({ draft, skipCI: false });
++};
 +
 +/**
 + * Reuse the CMS save path, including conflict detection and store updates.
@@ -251,14 +506,27 @@ index 0000000..dc38253
 +};
 diff --git a/src/lib/services/contents/entry/publication.test.js b/src/lib/services/contents/entry/publication.test.js
 new file mode 100644
-index 0000000..5006c23
+index 0000000..0644f07
 --- /dev/null
 +++ b/src/lib/services/contents/entry/publication.test.js
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,47 @@
 +import { beforeEach, expect, test, vi } from 'vitest';
 +import { buildDraft } from '$lib/services/contents/draft/create';
 +import { saveEntry } from '$lib/services/contents/draft/save';
-+import { isPublished, setPublication } from './publication';
++import { isPublished, isPublic, setPublication, setVisibility } from './publication';
++
++test.each(['private', undefined, 'PUBLIC', 'public'])('visibility fails closed for %s', (visibility) => {
++  expect(isPublic({ locales: { _default: { content: { visibility } } } }, { _i18n: { defaultLocale: '_default' } })).toBe(visibility === 'public');
++});
++
++test('visibility change preserves publication and propagates save errors', async () => {
++  const draft = { currentValues: { _default: { published: true, visibility: 'private', body: 'text' } } };
++  buildDraft.mockReturnValue(draft);
++  saveEntry.mockRejectedValue(new Error('save_conflict'));
++  await expect(setVisibility(collection, entry, 'public')).rejects.toThrow('save_conflict');
++  expect(draft.currentValues._default).toEqual({ published: true, visibility: 'public', body: 'text' });
++  await expect(setVisibility(collection, entry, 'unknown')).rejects.toThrow('invalid_visibility');
++});
 +
 +vi.mock('$lib/services/contents/draft/create', () => ({ buildDraft: vi.fn() }));
 +vi.mock('$lib/services/contents/draft/save', () => ({ saveEntry: vi.fn() }));
