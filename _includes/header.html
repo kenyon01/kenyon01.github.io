@@ -5,11 +5,11 @@
       <span class="brand-copy">Qingyan<span class="brand-dot">.</span></span>
     </a>
 
-    <button class="nav-toggle" type="button" aria-label="打开导航" aria-expanded="false" data-nav-toggle>
+    <button class="nav-toggle" type="button" aria-label="打开导航" aria-expanded="false" aria-controls="site-navigation" data-nav-toggle>
       <span></span><span></span>
     </button>
 
-    <nav class="site-nav" aria-label="主导航" data-nav>
+    <nav id="site-navigation" class="site-nav" aria-label="主导航" data-nav>
       <a href="{{ '/' | relative_url }}" {% if page.url == '/' %}aria-current="page"{% endif %}>首页</a>
       <a href="{{ '/projects/' | relative_url }}" {% if page.url == '/projects/' %}aria-current="page"{% endif %}>项目</a>
       <a href="{{ '/blog/' | relative_url }}" {% if page.url contains '/blog/' %}aria-current="page"{% endif %}>文章</a>
@@ -18,4 +18,3 @@
     </nav>
   </div>
 </header>
-

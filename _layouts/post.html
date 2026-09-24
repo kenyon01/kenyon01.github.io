@@ -1,21 +1,26 @@
 ---
 layout: default
 ---
-<article class="post shell">
-  <header class="post-header reveal">
+<div class="reading-progress" data-reading-progress aria-hidden="true" hidden><span></span></div>
+<article class="post shell" data-article>
+  <header class="post-header">
     <a class="back-link" href="{{ '/blog/' | relative_url }}">← 返回文章</a>
     <div class="post-meta">
       <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: '%Y 年 %m 月 %d 日' }}</time>
       {% if page.reading_time %}<span>{{ page.reading_time }} 分钟阅读</span>{% endif %}
     </div>
-    <h1>{{ page.title }}</h1>
+    <h1>{{ page.title | escape }}</h1>
     {% if page.description %}<p class="post-deck">{{ page.description }}</p>{% endif %}
     {% if page.tags %}<div class="tag-row">{% for tag in page.tags %}<span>{{ tag }}</span>{% endfor %}</div>{% endif %}
   </header>
-  <div class="post-content reveal">{{ content }}</div>
+  <div class="reading-layout">
+    <aside class="article-outline" data-outline hidden>
+      <details open><summary>文章目录</summary><nav aria-label="文章目录" data-toc></nav></details>
+    </aside>
+    <div class="post-content" data-post-content>{{ content }}</div>
+  </div>
   <footer class="post-footer">
-    <p>感谢阅读。</p>
+    <p>感谢读到这里。<br><span>保持好奇，我们下篇见。</span></p>
     <a class="button button-primary" href="{{ '/blog/' | relative_url }}">继续浏览文章 <span aria-hidden="true">→</span></a>
   </footer>
 </article>
-
