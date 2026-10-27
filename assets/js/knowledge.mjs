@@ -61,6 +61,7 @@ export function buildHeadingTree(headings) {
 function initializeReader() {
   const reader = document.querySelector('[data-knowledge-reader]');
   if (!reader) return;
+  document.documentElement.classList.add('knowledge-page');
   const header = document.querySelector('[data-header]');
   const setHeaderHeight = () => document.documentElement.style.setProperty('--site-header-height', `${header?.getBoundingClientRect().height || 72}px`);
   setHeaderHeight();

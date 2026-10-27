@@ -1,3 +1,4 @@
+html.knowledge-page { scroll-padding-top: 0; }
 .knowledge-shell {
   --reader-top: calc(var(--site-header-height, 72px) + 24px);
   width: min(1600px, calc(100% - 48px));
