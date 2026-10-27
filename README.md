@@ -55,6 +55,20 @@ visibility: private
 
 ## 后台定制维护
 
+## 实验视频（腾讯云存储）
+
+在文章编辑页展开「实验视频」，添加一项，填写说明，使用「上传视频到腾讯云」选择 MP4（H.264 8 位视频、AAC 音频），单个不超过 200 MiB。上传完成自动填入 HTTPS 链接，再保存文章。也可以「选择已上传视频」复用文件。视频显示在文章正文下方。
+
+视频字节只保存在腾讯云 `/opt/robot-learning/media/videos/`，不会写入私有或公开 GitHub 仓库。现有 GitHub 登录用于验证站主的上传权限。普通媒体入口拒绝视频，普通附件最大 10 MiB。上传按钮会显示进度，失败保留原链接，可重试。
+
+**视频链接是公开的，私有文章不会使已上传的视频变为私有。** 仅上传适合公开展示的素材。移除文章中的视频项只是移除引用，不删除服务器文件；如需删除视频请由管理员确认引用后处理。站点重新部署不会覆盖视频目录。
+
+两个站点使用 `https://www.nlearn.net/robot-media/videos/` 播放同一份视频；该域名在同一腾讯云服务器已有 HTTPS。文章仍遵循原有公开/私有发布规则，腾讯云网页镜像仍需同步构建产物。
+
+服务部署、配额、检查与回滚见 `deploy/media/README.md`。
+
+## 后台构建
+
 后台基于 Sveltia CMS 0.218.0，固定源码提交 `00c44da6b919d15e559f51ca54cd96237ae556ee`。定制补丁位于 `cms-customization/publication.patch`，只增加文章列表操作与状态，复用原生保存、冲突检测与登录。
 
 使用 Node.js 24.19+ 和 pnpm，运行 `powershell -File cms-customization/build.ps1` 可重建 `admin/vendor/sveltia-cms.js`。构建目录 `.cms-build` 不提交。保留上游 MIT 许可证；语言包等按上游固定版本从 CDN 加载。

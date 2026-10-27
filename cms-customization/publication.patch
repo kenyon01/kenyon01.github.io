@@ -1,9 +1,226 @@
+diff --git a/src/lib/components/contents/details/fields/string/server-video.svelte b/src/lib/components/contents/details/fields/string/server-video.svelte
+new file mode 100644
+index 0000000..f315375
+--- /dev/null
++++ b/src/lib/components/contents/details/fields/string/server-video.svelte
+@@ -0,0 +1,98 @@
++<script>
++  import { onDestroy } from 'svelte';
++  import { user } from '$lib/services/user/account.svelte';
++
++  let { onUploaded, readonly = false } = $props();
++  let selected = $state();
++  let busy = $state(false);
++  let progress = $state(0);
++  let message = $state('');
++  let failed = $state(false);
++  let records = $state([]);
++  let xhr;
++  let active = true;
++  const endpoint = 'https://www.nlearn.net/robot-media/api/videos';
++  onDestroy(() => { active = false; xhr?.abort(); });
++
++  function token() {
++    if (user.account?.backendName !== 'github' || !user.account?.token) throw new Error('请先登录 GitHub 写作后台。');
++    return user.account.token;
++  }
++
++  async function list() {
++    failed = false;
++    try {
++      const response = await fetch(endpoint, { headers: { Authorization: `Bearer ${token()}` }, signal: AbortSignal.timeout(15000) });
++      const data = await response.json();
++      if (!response.ok) throw new Error(data.error || '读取失败，请重试。');
++      if (!active) return;
++      records = data.videos;
++      message = records.length ? '点击已有视频即可填入链接。' : '还没有上传的视频。';
++    } catch (error) { if (active) { failed = true; message = error.message; } }
++  }
++
++  function upload() {
++    if (!selected || busy || readonly) return;
++    failed = false;
++    if (!/\.mp4$/i.test(selected.name) || selected.size > 200 * 1024 ** 2 || !selected.size) {
++      failed = true; message = '请选择不超过 200MB 的 MP4 视频。'; return;
++    }
++    let auth;
++    try { auth = token(); } catch (error) { failed = true; message = error.message; return; }
++    busy = true; progress = 0; message = '正在上传到腾讯云…';
++    xhr = new XMLHttpRequest();
++    xhr.open('POST', endpoint);
++    xhr.timeout = 15 * 60 * 1000;
++    xhr.setRequestHeader('Authorization', `Bearer ${auth}`);
++    xhr.setRequestHeader('Content-Type', 'video/mp4');
++    xhr.setRequestHeader('X-File-Name', encodeURIComponent(selected.name));
++    xhr.upload.onprogress = event => {
++      if (!active) return;
++      if (event.lengthComputable) progress = Math.round(event.loaded * 100 / event.total);
++      if (progress === 100) message = '上传完成，正在验证视频格式…';
++    };
++    const finish = (text) => { if (active) { busy = false; failed = true; message = text; } };
++    xhr.onerror = () => finish('网络连接失败，请重试；也可查看已上传视频确认是否成功。');
++    xhr.ontimeout = () => finish('上传超时，请重试；也可查看已上传视频确认是否成功。');
++    xhr.onabort = () => finish('上传已取消。');
++    xhr.onload = () => {
++      if (!active) return;
++      busy = false;
++      try {
++        const data = JSON.parse(xhr.responseText);
++        if (xhr.status !== 201) throw new Error(data.error || '上传失败，请重试。');
++        onUploaded(data.url);
++        message = '视频已保存到腾讯云，链接已填入。请保存文章。';
++      } catch (error) { failed = true; message = error.message; }
++    };
++    xhr.send(selected);
++  }
++</script>
++
++<div class="server-video">
++  <p>视频保存在腾讯云，GitHub 只保存链接。仅上传可公开展示的视频：知道链接的人都能观看，文章设为私有不会隐藏视频。</p>
++  <label>选择视频（MP4，最多 200MB）<input type="file" accept="video/mp4,.mp4" disabled={busy || readonly} onchange={event => { selected = event.currentTarget.files?.[0]; message = ''; }} /></label>
++  <div class="actions">
++    <button type="button" disabled={!selected || busy || readonly} onclick={upload}>上传视频到腾讯云</button>
++    {#if busy}<button type="button" onclick={() => xhr?.abort()}>取消上传</button>{/if}
++    <button type="button" disabled={busy || readonly} onclick={list}>选择已上传视频</button>
++  </div>
++  {#if busy}<progress max="100" value={progress} aria-label="视频上传进度"></progress><span>{progress}%</span>{/if}
++  {#if message}<p role={failed ? 'alert' : 'status'}>{message}</p>{/if}
++  {#if records.length}
++    <ul>{#each records as record}<li><button type="button" disabled={busy || readonly} onclick={() => { onUploaded(record.url); records = []; message = '链接已填入，请保存文章。'; }}>{record.name}（{(record.size / 1024 ** 2).toFixed(1)} MB）</button></li>{/each}</ul>
++  {/if}
++</div>
++
++<style>
++  .server-video { margin-block: 8px 14px; padding: 14px; border: 1px solid #8886; border-radius: 8px; }
++  p { font-size: 13px; line-height: 1.6; margin: 0 0 10px; }
++  label { display: grid; gap: 8px; }
++  input { max-width: 100%; }
++  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
++  button { font: inherit; color: inherit; background: transparent; border: 1px solid #8888; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
++  button:disabled { opacity: .5; cursor: default; }
++  progress { width: 75%; margin-inline-end: 8px; }
++  ul { max-height: 220px; overflow: auto; padding-inline-start: 20px; }
++  li { margin-block: 6px; overflow-wrap: anywhere; }
++</style>
+diff --git a/src/lib/components/contents/details/fields/string/server-video.test.js b/src/lib/components/contents/details/fields/string/server-video.test.js
+new file mode 100644
+index 0000000..8958128
+--- /dev/null
++++ b/src/lib/components/contents/details/fields/string/server-video.test.js
+@@ -0,0 +1,84 @@
++// @vitest-environment happy-dom
++import { afterEach, expect, test, vi } from 'vitest';
++import { mount, unmount, tick } from 'svelte';
++import ServerVideo from './server-video.svelte';
++import { user } from '$lib/services/user/account.svelte';
++
++vi.mock('$lib/services/user/account.svelte', () => ({ user: { account: { backendName: 'github', token: 'test-token' } } }));
++let component;
++let request;
++const changed = vi.fn();
++class Upload {
++  upload = {};
++  open = vi.fn();
++  setRequestHeader = vi.fn();
++  send = vi.fn();
++  abort = vi.fn(() => this.onabort?.());
++  constructor() { request = this; }
++}
++const button = text => [...document.querySelectorAll('button')].find(b => b.textContent === text);
++async function open(file, readonly = false) {
++  vi.stubGlobal('XMLHttpRequest', Upload);
++  component = mount(ServerVideo, { target: document.body, props: { onUploaded: changed, readonly } });
++  await tick();
++  const input = document.querySelector('input');
++  Object.defineProperty(input, 'files', { configurable: true, value: [file] });
++  input.dispatchEvent(new Event('change', { bubbles: true }));
++  await tick();
++}
++afterEach(async () => {
++  if (component) await unmount(component);
++  document.body.innerHTML = '';
++  changed.mockClear();
++  vi.unstubAllGlobals();
++  user.account = { backendName: 'github', token: 'test-token' };
++});
++
++test('uploads bytes to Tencent and returns only the resulting URL', async () => {
++  const file = new File(['sample'], '实验.mp4', { type: 'video/mp4' });
++  await open(file);
++  button('上传视频到腾讯云').click();
++  await tick();
++  expect(request.open).toHaveBeenCalledWith('POST', 'https://www.nlearn.net/robot-media/api/videos');
++  expect(request.send).toHaveBeenCalledWith(file);
++  expect(request.setRequestHeader).toHaveBeenCalledWith('Authorization', 'Bearer test-token');
++  expect(changed).not.toHaveBeenCalled();
++  request.status = 201;
++  const url = 'https://www.nlearn.net/robot-media/videos/' + 'a'.repeat(64) + '.mp4';
++  request.responseText = JSON.stringify({ url });
++  request.onload();
++  await tick();
++  expect(changed).toHaveBeenCalledWith(url);
++  expect(document.body.textContent).toContain('请保存文章');
++});
++test('failed uploads preserve the article value and allow retry', async () => {
++  await open(new File(['x'], 'test.mp4'));
++  button('上传视频到腾讯云').click();
++  request.status = 401;
++  request.responseText = JSON.stringify({ error: '登录已过期' });
++  request.onload();
++  await tick();
++  expect(changed).not.toHaveBeenCalled();
++  expect(document.body.textContent).toContain('登录已过期');
++  expect(button('上传视频到腾讯云').disabled).toBe(false);
++});
++test('readonly disables uploads and choosing existing videos', async () => {
++  await open(new File(['x'], 'test.mp4'), true);
++  expect(button('上传视频到腾讯云').disabled).toBe(true);
++  expect(button('选择已上传视频').disabled).toBe(true);
++});
++test('sign-in is required and existing videos only fill a URL', async () => {
++  await open(new File(['x'], 'test.mp4'));
++  user.account = null;
++  button('上传视频到腾讯云').click();
++  await tick();
++  expect(changed).not.toHaveBeenCalled();
++  expect(document.body.textContent).toContain('请先登录');
++  user.account = { backendName: 'github', token: 'test-token' };
++  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ videos: [{ url: 'https://www.nlearn.net/robot-media/videos/test.mp4', name: '已有视频', size: 1024 }] }) }));
++  button('选择已上传视频').click();
++  await vi.waitFor(() => expect(document.body.textContent).toContain('已有视频'));
++  [...document.querySelectorAll('li button')][0].click();
++  await tick();
++  expect(changed).toHaveBeenCalledWith('https://www.nlearn.net/robot-media/videos/test.mp4');
++});
+diff --git a/src/lib/components/contents/details/fields/string/string-editor.svelte b/src/lib/components/contents/details/fields/string/string-editor.svelte
+index 557cd65..d677821 100644
+--- a/src/lib/components/contents/details/fields/string/string-editor.svelte
++++ b/src/lib/components/contents/details/fields/string/string-editor.svelte
+@@ -9,6 +9,7 @@
+   import { getContext } from 'svelte';
+ 
+   import CharacterCounter from '$lib/components/contents/details/fields/string/character-counter.svelte';
++  import ServerVideo from '$lib/components/contents/details/fields/string/server-video.svelte';
+   import {
+     getStringFieldValue,
+     getStringInputValue,
+@@ -96,6 +97,10 @@
+   });
+ </script>
+ 
++{#if fieldConfig.name === 'video_url'}
++  <ServerVideo {readonly} onUploaded={(url) => { inputValue = url; setCurrentValue(); }} />
++{/if}
++
+ <TextInput
+   lang={getCanonicalLocale(locale)}
+   dir={getDirection(locale)}
 diff --git a/src/lib/components/contents/list/article-reader.svelte b/src/lib/components/contents/list/article-reader.svelte
 new file mode 100644
-index 0000000..430afd9
+index 0000000..77c14bd
 --- /dev/null
 +++ b/src/lib/components/contents/list/article-reader.svelte
-@@ -0,0 +1,133 @@
+@@ -0,0 +1,143 @@
 +<script>
 +  import { onMount } from 'svelte';
 +  import DOMPurify from 'isomorphic-dompurify';
@@ -16,6 +233,9 @@ index 0000000..430afd9
 +  let html = $state('');
 +  let error = $state('');
 +  const content = $derived(entry.locales[collection._i18n.defaultLocale].content);
++  const videos = $derived(Object.entries(content)
++    .filter(([key, value]) => /^videos\.\d+\.video_url$/.test(key) && typeof value === 'string' && /^https:\/\/www\.nlearn\.net\/robot-media\/videos\/[a-f0-9]{64}\.mp4$/.test(value))
++    .map(([key, url]) => ({ url, caption: content[key.replace(/video_url$/, 'caption')] || '实验视频' })));
 +
 +  onMount(() => {
 +    let active = true;
@@ -84,6 +304,13 @@ index 0000000..430afd9
 +    {#if error}<p role="alert">{error}</p>{:else if html}<div class="body">
 +        {@html html}
 +      </div>{:else}<p role="status">加载中…</p>{/if}
++    {#if videos.length}
++      <section aria-label="实验视频">
++        <h2>实验视频</h2>
++        <p>视频链接可公开访问；点击链接后在新窗口播放。</p>
++        {#each videos as video}<p><a href={video.url} target="_blank" rel="noopener noreferrer">{video.caption} → 打开视频</a></p>{/each}
++      </section>
++    {/if}
 +  </article>
 +</dialog>
 +
@@ -465,6 +692,202 @@ index 0000000..52e3939
 +  expect(setVisibility).toHaveBeenCalledTimes(1);
 +  expect(document.body.textContent).toContain('已上架 · 私有');
 +});
+diff --git a/src/lib/services/assets/video-policy.js b/src/lib/services/assets/video-policy.js
+new file mode 100644
+index 0000000..1ab585f
+--- /dev/null
++++ b/src/lib/services/assets/video-policy.js
+@@ -0,0 +1,19 @@
++/**
++ * Keep video binaries and oversized attachments out of the article repository.
++ * @param {import('$lib/types/private').FileChange[]} changes Proposed file changes.
++ */
++export function assertRepositoryMedia(changes) {
++  changes.forEach(({ action, path = '', data }) => {
++    if (action === 'delete') return;
++
++    const name = typeof File !== 'undefined' && data instanceof File ? data.name : '';
++
++    if (/\.(mp4|m4v|mov|webm|avi|mkv|mpeg|mpg|mts|m2ts|wmv|flv|ogv|3gp)$/i.test(path) || /\.(mp4|m4v|mov|webm|avi|mkv|mpeg|mpg|mts|m2ts|wmv|flv|ogv|3gp)$/i.test(name) || (data instanceof Blob && data.type.startsWith('video/'))) {
++      throw new Error('视频不能保存到 GitHub，请使用文章的「实验视频 → 上传视频到腾讯云」。');
++    }
++
++    if (data instanceof Blob && data.size > 10 * 1024 ** 2) {
++      throw new Error('普通附件最多 10MB。视频请使用「实验视频 → 上传视频到腾讯云」。');
++    }
++  });
++}
+diff --git a/src/lib/services/assets/video-policy.test.js b/src/lib/services/assets/video-policy.test.js
+new file mode 100644
+index 0000000..59a83fc
+--- /dev/null
++++ b/src/lib/services/assets/video-policy.test.js
+@@ -0,0 +1,20 @@
++import { describe, expect, it } from 'vitest';
++import { assertRepositoryMedia } from './video-policy';
++
++describe('repository video policy', () => {
++  it('rejects renamed videos, video extensions, and oversized binary files', () => {
++    for (const change of [
++      { path: 'article-media/test.MP4', data: new Blob(['x']) },
++      { path: 'photo.png', data: new Blob(['x'], { type: 'video/mp4' }) },
++      { path: 'photo.png', data: new File(['x'], 'original.mov') },
++      { path: 'large.dat', data: new Blob([new Uint8Array(10 * 1024 ** 2 + 1)]) },
++    ]) expect(() => assertRepositoryMedia([{ action: 'create', ...change }])).toThrow();
++  });
++  it('allows posts with video URLs, normal images, and removal of old videos', () => {
++    expect(() => assertRepositoryMedia([
++      { action: 'create', path: '_posts/test.md', data: 'video_url: https://www.nlearn.net/robot-media/videos/test.mp4' },
++      { action: 'create', path: 'article-media/test.png', data: new Blob(['image'], { type: 'image/png' }) },
++      { action: 'delete', path: 'article-media/old.mp4' },
++    ])).not.toThrow();
++  });
++});
+diff --git a/src/lib/services/backends/git/github/commits.js b/src/lib/services/backends/git/github/commits.js
+index ca8755b..c223f8d 100644
+--- a/src/lib/services/backends/git/github/commits.js
++++ b/src/lib/services/backends/git/github/commits.js
+@@ -1,6 +1,7 @@
+ import { _ } from '@sveltia/i18n';
+ import { encodeBase64 } from '@sveltia/utils/file';
+ 
++import { assertRepositoryMedia } from '$lib/services/assets/video-policy';
+ import { getWorkflowRepository } from '$lib/services/backends/git/github/fork';
+ import { repository } from '$lib/services/backends/git/github/repository';
+ import { fetchGraphQL } from '$lib/services/backends/git/shared/api';
+@@ -111,6 +112,8 @@ const getExpectedHeadOid = async ({ headOid, branch }) => {
+  * @see https://docs.github.com/en/graphql/reference/mutations#createcommitonbranch
+  */
+ export const commitChanges = async (changes, options) => {
++  assertRepositoryMedia(changes);
++
+   // An Open Authoring contributor can’t write to the configured repository at all, so a change that
+   // doesn’t go through Editorial Workflow has nowhere to land. Fail here with an explanation rather
+   // than letting the API reject the commit with a bare permission error
+diff --git a/src/lib/services/backends/git/github/commits.test.js b/src/lib/services/backends/git/github/commits.test.js
+index 940a20e..6f72de7 100644
+--- a/src/lib/services/backends/git/github/commits.test.js
++++ b/src/lib/services/backends/git/github/commits.test.js
+@@ -523,111 +523,16 @@ describe('GitHub commits service', () => {
+       expect(vi.mocked(encodeBase64)).toHaveBeenCalledWith('');
+     });
+ 
+-    test('skips OID query for files over 10 MB', async () => {
+-      const largeFile = new File([new ArrayBuffer(11 * 1024 * 1024)], 'large-file.pdf', {
+-        type: 'application/pdf',
+-      });
+-
+-      const changes = /** @type {any[]} */ ([
+-        {
+-          action: 'create',
+-          path: 'content/small-entry.md',
+-          data: 'title: Small Entry',
+-        },
+-        {
+-          action: 'create',
+-          path: 'public/files/large-file.pdf',
+-          data: largeFile,
+-        },
+-      ]);
+-
+-      const options = /** @type {any} */ ({
+-        commitType: 'create',
+-      });
+-
+-      vi.mocked(fetchGraphQL)
+-        .mockResolvedValueOnce({
+-          repository: {
+-            ref: {
+-              target: {
+-                history: {
+-                  nodes: [{ oid: 'base-sha', message: 'Base' }],
+-                },
+-              },
+-            },
+-          },
+-        })
+-        .mockResolvedValueOnce({
+-          createCommitOnBranch: {
+-            commit: {
+-              oid: 'commit-sha',
+-              committedDate: '2023-01-01T00:00:00Z',
+-              file_0: { oid: 'small-file-sha' },
+-              // file_1 is not present because the large file OID query was skipped
+-            },
+-          },
+-        });
+-
+-      const result = await commitChanges(changes, options);
+-      // Verify the mutation query only includes OID lookup for the small file
+-      const mutationCall = vi.mocked(fetchGraphQL).mock.calls[1];
+-      const query = /** @type {string} */ (mutationCall[0]);
+-
+-      expect(query).toContain('file_0: file(path: "content/small-entry.md") { oid }');
+-      expect(query).not.toContain('file_1: file(path:');
+-
+-      expect(result.files).toEqual({
+-        'content/small-entry.md': { sha: 'small-file-sha' },
+-        'public/files/large-file.pdf': { sha: undefined, file: largeFile },
+-      });
++    test('rejects oversized attachments before any GitHub API call', async () => {
++      const data = new File([new ArrayBuffer(11 * 1024 * 1024)], 'large.pdf');
++      await expect(commitChanges([{ action: 'create', path: 'media/large.pdf', data }], { commitType: 'create' })).rejects.toThrow('普通附件最多 10MB');
++      expect(fetchGraphQL).not.toHaveBeenCalled();
++      expect(encodeBase64).not.toHaveBeenCalled();
+     });
+ 
+-    test('skips OID query when all files are over 10 MB', async () => {
+-      const largeFile = new File([new ArrayBuffer(11 * 1024 * 1024)], 'large.bin', {
+-        type: 'application/octet-stream',
+-      });
+-
+-      const changes = /** @type {any[]} */ ([
+-        {
+-          action: 'create',
+-          path: 'public/files/large.bin',
+-          data: largeFile,
+-        },
+-      ]);
+-
+-      const options = /** @type {any} */ ({
+-        commitType: 'create',
+-      });
+-
+-      vi.mocked(fetchGraphQL)
+-        .mockResolvedValueOnce({
+-          repository: {
+-            ref: {
+-              target: {
+-                history: {
+-                  nodes: [{ oid: 'base-sha', message: 'Base' }],
+-                },
+-              },
+-            },
+-          },
+-        })
+-        .mockResolvedValueOnce({
+-          createCommitOnBranch: {
+-            commit: {
+-              oid: 'commit-sha',
+-              committedDate: '2023-01-01T00:00:00Z',
+-            },
+-          },
+-        });
+-
+-      const result = await commitChanges(changes, options);
+-      const mutationCall = vi.mocked(fetchGraphQL).mock.calls[1];
+-      const query = /** @type {string} */ (mutationCall[0]);
+-
+-      expect(query).not.toContain('file(path:');
+-      expect(result.files).toEqual({
+-        'public/files/large.bin': { sha: undefined, file: largeFile },
+-      });
++    test('rejects video attachments before any GitHub API call', async () => {
++      await expect(commitChanges([{ action: 'create', path: 'media/clip.mp4', data: new Blob(['clip']) }], { commitType: 'create' })).rejects.toThrow('视频不能保存到 GitHub');
++      expect(fetchGraphQL).not.toHaveBeenCalled();
+     });
+ 
+     test('includes OID query for files at exactly 10 MB', async () => {
 diff --git a/src/lib/services/contents/draft/create/index.js b/src/lib/services/contents/draft/create/index.js
 index 4b43dd2..b6f8ccd 100644
 --- a/src/lib/services/contents/draft/create/index.js

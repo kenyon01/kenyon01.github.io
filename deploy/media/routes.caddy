@@ -1,0 +1,21 @@
+# Import inside the existing www.nlearn.net site, before its fallback handle.
+handle /robot-media/api/* {
+    request_body {
+        max_size 210MB
+    }
+    reverse_proxy 127.0.0.1:8098
+}
+handle_path /robot-media/videos/* {
+    @mp4 path_regexp video ^/[a-f0-9]{64}\.mp4$
+    handle @mp4 {
+        root * /opt/robot-learning/media/videos
+        header Content-Type video/mp4
+        header Cache-Control "public, max-age=31536000, immutable"
+        header X-Content-Type-Options nosniff
+        file_server
+    }
+    respond 404
+}
+handle /robot-media/* {
+    respond 404
+}
