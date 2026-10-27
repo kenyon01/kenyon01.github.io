@@ -60,6 +60,16 @@ collections:
         name: description
         widget: text
         hint: 用一两句话说明文章内容，会显示在文章列表和搜索结果中。
+      - label: 所属栏目
+        name: topic
+        widget: select
+        default: general
+        options:
+          - {label: 具身智能, value: robotics}
+          - {label: 模型后训练, value: post-training}
+          - {label: 量化交易, value: quant}
+          - {label: 其他文章, value: general}
+        hint: 选择文章归属。公开并上架后进入对应栏目；“其他文章”只显示在文章列表中。标签用于补充主题，不决定栏目。
       - label: 发布日期
         name: date
         widget: datetime
@@ -81,7 +91,7 @@ collections:
         name: tags
         widget: list
         required: false
-        hint: 例如：量化、AI、工程实践。
+        hint: 补充文章主题，例如：策略与控制、训练数据、实验方法。所属栏目请在上方单独选择。
         field:
           label: 标签
           name: tag

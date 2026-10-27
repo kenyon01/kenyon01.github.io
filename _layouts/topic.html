@@ -2,7 +2,9 @@
 layout: page
 ---
 {{ content }}
-{% assign topic_posts = site.posts | where_exp: 'post', 'post.tags contains page.topic_tag' %}
+{% assign topic_posts = site.posts | where: 'topic', page.topic_key %}
+{% assign legacy_posts = site.posts | where_exp: 'post', "post.topic == nil or post.topic == ''" | where_exp: 'post', 'post.tags contains page.topic_tag' %}
+{% assign topic_posts = topic_posts | concat: legacy_posts | sort: 'date' | reverse %}
 {% if topic_posts.size > 0 %}
 <div class="archive">
   {% for post in topic_posts %}

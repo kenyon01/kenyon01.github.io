@@ -34,7 +34,9 @@ permalink: /robotics/
     </div>
     <p class="robotics-muted" data-robotics-count role="status" aria-live="polite"></p>
     <div class="robotics-notes">
-      {% assign robotics_posts = site.posts | where_exp: 'post', "post.tags contains '具身智能'" %}
+      {% assign robotics_posts = site.posts | where: 'topic', 'robotics' %}
+      {% assign legacy_posts = site.posts | where_exp: 'post', "post.topic == nil or post.topic == ''" | where_exp: 'post', "post.tags contains '具身智能'" %}
+      {% assign robotics_posts = robotics_posts | concat: legacy_posts | sort: 'date' | reverse %}
       {% for post in robotics_posts %}
       <a class="robotics-note" href="{{ post.url | relative_url }}" data-robotics-note data-tags="{{ post.tags | join: ' ' | escape }}">
         <div class="robotics-note-meta"><time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: '%Y.%m.%d' }}</time><span>{{ post.reading_time | default: 5 }} 分钟阅读</span></div>

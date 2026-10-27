@@ -5,8 +5,18 @@ layout: default
 <article class="post shell" data-article>
   <header class="post-header">
     <a class="back-link" href="{{ '/blog/' | relative_url }}">← 返回文章</a>
-    {% if page.tags contains '具身智能' %}
-    <a class="back-link" href="{{ '/robotics/' | relative_url }}"> / 具身智能学习手记 →</a>
+    {% assign article_topic = page.topic %}
+    {% if article_topic == nil or article_topic == '' %}
+      {% if page.tags contains '具身智能' %}{% assign article_topic = 'robotics' %}
+      {% elsif page.tags contains '模型后训练' %}{% assign article_topic = 'post-training' %}
+      {% elsif page.tags contains '量化交易' %}{% assign article_topic = 'quant' %}{% endif %}
+    {% endif %}
+    {% if article_topic == 'robotics' %}
+    <a class="back-link" href="{{ '/robotics/' | relative_url }}"> / 具身智能 →</a>
+    {% elsif article_topic == 'post-training' %}
+    <a class="back-link" href="{{ '/post-training/' | relative_url }}"> / 模型后训练 →</a>
+    {% elsif article_topic == 'quant' %}
+    <a class="back-link" href="{{ '/quant/' | relative_url }}"> / 量化交易 →</a>
     {% endif %}
     <div class="post-meta">
       <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: '%Y 年 %m 月 %d 日' }}</time>
