@@ -4,8 +4,11 @@
 }
 
 :8088 {
+    bind 127.0.0.1
     root * /opt/robot-learning/current
     encode zstd gzip
+    @admin path /admin /admin/*
+    redir @admin https://kenyon01.github.io{uri} 302
     @private path /.* /.*/**
     respond @private 404
     header X-Content-Type-Options nosniff

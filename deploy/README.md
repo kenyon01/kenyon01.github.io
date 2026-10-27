@@ -2,9 +2,10 @@
 
 - SSH：`root@43.134.239.33`
 - 目录：`/opt/robot-learning/`
-- 访问入口：`http://43.134.239.33:8088/robotics/`
+- 公网入口：`http://43.134.239.33:80/robotics/`（80 可省略）
+- 网站进程：`127.0.0.1:8088`，由现有 Caddy 的 IP 专属规则转发。2026-10-27 验证时，公网直连 8088 超时，80 可达。
 - 静态文件：`releases/<release>/`，`current` 符号链接指向当前版本。
-- 服务：`robot-learning.service`，复用已安装的 Caddy 二进制，独立监听 8088，不修改现有 Caddy 服务。
+- 服务：`robot-learning.service`，复用已安装的 Caddy 二进制，独立监听 8088。`public-ip.caddy` 中的规则追加到现有 `/etc/caddy/Caddyfile`，只匹配 IP，不改变既有域名的路由。
 
 ## 内容更新
 
