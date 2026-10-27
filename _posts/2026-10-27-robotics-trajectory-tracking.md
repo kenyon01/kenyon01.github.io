@@ -1,4 +1,5 @@
 ---
+topic: robotics
 layout: post
 title: "目标在移动，机械臂为什么跟不上？"
 description: "同一段轨迹的离线对照，帮助我们区分目标限幅滞后、实际关节误差和任务失败。"

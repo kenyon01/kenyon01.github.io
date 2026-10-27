@@ -1,4 +1,5 @@
 ---
+topic: general
 layout: post
 title: "重新开始写作"
 description: "把旧的资源导航站收起来，重新搭一张属于自己的书桌。"

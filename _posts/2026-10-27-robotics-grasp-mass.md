@@ -1,4 +1,5 @@
 ---
+topic: robotics
 layout: post
 title: "瓶子掉落之后：先检查物理语义"
 description: "一个 22 kg 与 0.5 kg 的差异，如何改变我们对抓取失败的判断；以及为什么修复后仍不能宣布全流程成功。"

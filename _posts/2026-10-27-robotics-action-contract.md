@@ -1,4 +1,5 @@
 ---
+topic: robotics
 layout: post
 title: "先让模型和机器人说同一种语言"
 description: "从 π0.5 与 ARX X5 的接口对齐中，理解动作语义、夹爪命令和实测状态为什么不能混用。"

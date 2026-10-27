@@ -1,4 +1,5 @@
 ---
+topic: robotics
 layout: post
 title: "把一次失败，写成下一次实验的起点"
 description: "为机器人学习建立一份轻量记录模板：现象、假设、对照、证据、边界和下一步。"
