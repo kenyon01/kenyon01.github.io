@@ -1,0 +1,20 @@
+[Unit]
+Description=Qingyan personal site and robotics learning notes
+After=network.target
+
+[Service]
+User=caddy
+Group=caddy
+ExecStart=/usr/bin/caddy run --config /opt/robot-learning/Caddyfile --adapter caddyfile
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+MemoryMax=128M
+TasksMax=64
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

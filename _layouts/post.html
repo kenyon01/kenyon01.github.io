@@ -5,6 +5,9 @@ layout: default
 <article class="post shell" data-article>
   <header class="post-header">
     <a class="back-link" href="{{ '/blog/' | relative_url }}">← 返回文章</a>
+    {% if page.tags contains '具身智能' %}
+    <a class="back-link" href="{{ '/robotics/' | relative_url }}"> / 具身智能学习手记 →</a>
+    {% endif %}
     <div class="post-meta">
       <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: '%Y 年 %m 月 %d 日' }}</time>
       {% if page.reading_time %}<span>{{ page.reading_time }} 分钟阅读</span>{% endif %}

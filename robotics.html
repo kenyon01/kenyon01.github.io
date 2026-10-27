@@ -1,0 +1,54 @@
+---
+layout: default
+title: 具身智能学习手记
+description: 从观测到行动，从仿真到接触。记录机器人学习中的问题、实验与有边界的结论。
+permalink: /robotics/
+---
+<div class="robotics shell">
+  <section class="robotics-intro">
+    <div>
+      <p class="eyebrow">EMBODIED INTELLIGENCE / FIELD NOTES</p>
+      <h1>理解机器人，<br><span>从一次真实的反馈开始。</span></h1>
+      <p class="robotics-lead">看见什么，如何行动，为什么失败。<br>把我们的学习过程整理成笔记，把每一个结论放回证据里。</p>
+      <div class="robotics-actions"><a class="button button-primary" href="#notebook">开始阅读 <span aria-hidden="true">↗</span></a><a class="text-link" href="#learning-map">探索学习地图 →</a></div>
+    </div>
+    <figure class="robotics-loop">
+      <svg viewBox="0 0 360 320" role="img" aria-labelledby="robotics-diagram-title"><title id="robotics-diagram-title">观测、动作与反馈构成机器人学习闭环</title><defs><linearGradient id="robotics-metal" x2="1" y2="1"><stop stop-color="#c7d9ee"/><stop offset="1" stop-color="#6b91c0"/></linearGradient></defs><ellipse cx="185" cy="262" rx="132" ry="32" fill="#e2ebf5"/><path d="M98 251L128 158L213 90L274 143" fill="none" stroke="url(#robotics-metal)" stroke-width="27" stroke-linejoin="round"/><g fill="#f5f8fe" stroke="#5b81b0" stroke-width="4"><circle cx="128" cy="158" r="16"/><circle cx="213" cy="90" r="17"/><circle cx="274" cy="143" r="11"/></g><path d="M267 154L255 172L265 182M281 154L292 172L281 182" fill="none" stroke="#5b81b0" stroke-width="5"/><path d="M80 243H118L133 267H66Z" fill="#7699c1"/><path d="M264 221L277 209L293 216V241L279 250L264 241Z" fill="#d2def3" stroke="#819ac5" stroke-width="1.5"/><path d="M61 99L264 221M61 99L293 241" fill="none" stroke="#899fba" stroke-dasharray="3 6"/><rect x="42" y="82" width="28" height="21" rx="4" fill="#e1e9f4" stroke="#8da6c6"/><circle cx="57" cy="92" r="6" fill="#8da6c6"/><path d="M307 223Q354 149 311 78L310 89M311 78L322 82" fill="none" stroke="#6b8bba" stroke-dasharray="4 5"/><g fill="#637c9e" font-family="sans-serif" font-size="11"><text x="30" y="65">01 观测</text><text x="216" y="54">02 行动</text><text x="233" y="287">03 验证</text></g></svg>
+      <figcaption>观察 → 假设 → 实验 → 修正 <span>闭环示意，非实验回放</span></figcaption>
+    </figure>
+  </section>
+  <section id="learning-map" class="robotics-section">
+    <div class="section-heading"><div><p class="eyebrow">LEARNING MAP</p><h2>沿着问题，建立理解。</h2></div><p class="robotics-muted">四条线索，一起生长。</p></div>
+    <div class="robotics-map">
+      <a href="#topic-interfaces"><span>01 / INTERFACE</span><h3>感知与接口</h3><p>对齐图像、状态和动作语义，分清命令与测量。</p><b>从接口开始 ↗</b></a>
+      <a href="#topic-control"><span>02 / CONTROL</span><h3>策略与控制</h3><p>从目标到实际运动，理解限速、跟踪与反馈。</p><b>理解动作执行 ↗</b></a>
+      <a href="#topic-physics"><span>03 / PHYSICS</span><h3>仿真与接触</h3><p>质量、夹爪与接触连续性，决定物体能否被握住。</p><b>回到物理世界 ↗</b></a>
+      <a href="#topic-method"><span>04 / EVIDENCE</span><h3>实验方法</h3><p>一次只改变一个变量，为结论写下适用边界。</p><b>让证据可比较 ↗</b></a>
+    </div>
+  </section>
+  <section id="notebook" class="robotics-section">
+    <div class="section-heading"><div><p class="eyebrow">THE NOTEBOOK</p><h2>发现、复盘与学习过程。</h2></div><p class="robotics-muted">首批整理：2026.10.27<br>实验背景：2026.09.18</p></div>
+    <div class="robotics-tools" data-robotics-tools hidden>
+      <div class="robotics-filters" role="group" aria-label="笔记主题"><button type="button" data-topic="all" aria-pressed="true">全部</button><button type="button" data-topic="interfaces" aria-pressed="false">感知与接口</button><button type="button" data-topic="control" aria-pressed="false">策略与控制</button><button type="button" data-topic="physics" aria-pressed="false">仿真与接触</button><button type="button" data-topic="method" aria-pressed="false">实验方法</button></div>
+      <label class="robotics-search">搜索笔记<input type="search" data-robotics-search placeholder="输入关键词，如夹爪、轨迹…"></label>
+    </div>
+    <p class="robotics-muted" data-robotics-count role="status" aria-live="polite"></p>
+    <div class="robotics-notes">
+      {% assign robotics_posts = site.posts | where_exp: 'post', "post.tags contains '具身智能'" %}
+      {% for post in robotics_posts %}
+      <a class="robotics-note" href="{{ post.url | relative_url }}" data-robotics-note data-tags="{{ post.tags | join: ' ' | escape }}">
+        <div class="robotics-note-meta"><time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: '%Y.%m.%d' }}</time><span>{{ post.reading_time | default: 5 }} 分钟阅读</span></div>
+        <h3>{{ post.title | escape }}</h3><p>{{ post.description | escape }}</p>
+        <div class="tag-row">{% for tag in post.tags %}{% unless tag == '具身智能' %}<span>{{ tag | escape }}</span>{% endunless %}{% endfor %}</div>
+        <span class="robotics-read">阅读笔记 <span aria-hidden="true">↗</span></span>
+      </a>
+      {% endfor %}
+    </div>
+    <p class="robotics-empty" data-robotics-empty hidden>没有匹配的笔记。试试其他关键词，或选择“全部”。</p>
+    {% if robotics_posts.size == 0 %}<p>学习笔记正在整理中，稍后会在这里更新。</p>{% endif %}
+  </section>
+  <section class="robotics-section robotics-open">
+    <div><p class="eyebrow">OPEN QUESTIONS</p><h2>未知，也值得留下。</h2><p class="robotics-muted">这些是待研究方向，不是已经完成的结果。</p></div>
+    <ol><li><strong>静态抓得住，搬运时为何仍会丢失接触？</strong><p>分别验证静态保持与动态搬运，记录接触连续性。</p></li><li><strong>接口修复后，哪些差异仍然影响策略？</strong><p>继续对齐相机、坐标和采样条件，避免直接归因于模型。</p></li><li><strong>一次局部通过，离完整闭环还差什么？</strong><p>区分保存轨迹回放、预设控制验收和在线策略任务。</p></li></ol>
+  </section>
+</div>

@@ -83,6 +83,11 @@ layout: default
       <a class="text-link" href="{{ '/blog/' | relative_url }}">文章归档 <span aria-hidden="true">→</span></a>
     </div>
     <div class="post-list">
+      <a class="post-row reveal" href="{{ '/robotics/' | relative_url }}">
+        <span>持续更新 · 专题</span>
+        <div><h3>具身智能学习手记</h3><p>从动作接口到真实接触，记录机器人实验中的发现、失败与下一步问题。</p></div>
+        <span class="post-arrow" aria-hidden="true">↗</span>
+      </a>
       {% for post in site.posts limit: 3 %}
         <a class="post-row reveal" href="{{ post.url | relative_url }}">
           <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: '%Y.%m.%d' }}</time>
