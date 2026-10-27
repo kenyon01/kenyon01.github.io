@@ -69,6 +69,25 @@ collections:
         search_fields: [title]
         display_fields: [title]
         hint: 选择已有栏目，或点击「添加栏目」新建，随文章一起保存。栏目名称和简介会公开；文章仍按自己的阅读权限发布。
+      - label: 章节目录路径
+        name: chapter_path
+        widget: list
+        required: false
+        max: 8
+        hint: 按从外到内的顺序添加，例如「第一章 基础」→「1.1 接口」。每一项是一层目录，最多 8 层；留空则直接放在栏目下。
+        field:
+          label: 章节名称
+          name: chapter
+          widget: string
+          maxlength: 80
+      - label: 目录排序
+        name: chapter_order
+        widget: number
+        value_type: int
+        default: 50
+        min: 1
+        max: 10000
+        hint: 数字越小越靠前。同一章节内按此顺序显示文章，章节按其中最靠前的文章排序。
       - label: 发布日期
         name: date
         widget: datetime

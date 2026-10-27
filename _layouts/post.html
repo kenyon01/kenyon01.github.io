@@ -1,8 +1,8 @@
 ---
-layout: default
+layout: reader
 ---
 <div class="reading-progress" data-reading-progress aria-hidden="true" hidden><span></span></div>
-<article class="post shell" data-article>
+<article class="post" data-article>
   <header class="post-header">
     <a class="back-link" href="{{ '/blog/' | relative_url }}">← 返回文章</a>
     {% assign article_topic = page.topic %}
@@ -26,9 +26,6 @@ layout: default
     {% if page.tags %}<div class="tag-row">{% for tag in page.tags %}<span>{{ tag }}</span>{% endfor %}</div>{% endif %}
   </header>
   <div class="reading-layout">
-    <aside class="article-outline" data-outline hidden>
-      <details open><summary>文章目录</summary><nav aria-label="文章目录" data-toc></nav></details>
-    </aside>
     <div class="post-content" data-post-content>
       {{ content }}
       {% if page.videos.size > 0 %}

@@ -1,4 +1,7 @@
 ---
+chapter_path:
+- 第三章 · 实验方法
+chapter_order: 40
 topic: robotics
 layout: post
 title: "把一次失败，写成下一次实验的起点"

@@ -1,4 +1,7 @@
 ---
+chapter_path:
+- 第二章 · 仿真与接触
+chapter_order: 30
 topic: robotics
 layout: post
 title: "瓶子掉落之后：先检查物理语义"

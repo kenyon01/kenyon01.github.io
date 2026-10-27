@@ -1,4 +1,8 @@
 ---
+chapter_path:
+- 第一章 · 动作与控制
+- 1.2 轨迹与执行
+chapter_order: 20
 topic: robotics
 layout: post
 title: "目标在移动，机械臂为什么跟不上？"

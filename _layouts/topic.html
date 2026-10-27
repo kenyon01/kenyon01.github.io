@@ -1,6 +1,11 @@
 ---
-layout: page
+layout: reader
 ---
+<header class="knowledge-topic-header">
+  <p class="eyebrow">{{ page.kicker | default: 'FIELD NOTES' | escape }}</p>
+  <h1>{{ page.title | escape }}</h1>
+  {% if page.description %}<p>{{ page.description | escape }}</p>{% endif %}
+</header>
 {{ content }}
 {% assign topic_posts = site.posts | where: 'topic', page.topic_key %}
 {% assign legacy_posts = site.posts | where_exp: 'post', 'post.topic == nil' %}

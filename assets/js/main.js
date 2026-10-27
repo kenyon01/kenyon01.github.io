@@ -30,25 +30,6 @@
 
   const content = document.querySelector("[data-post-content]");
   const progress = document.querySelector("[data-reading-progress]");
-  const headings = content ? [...content.querySelectorAll("h2, h3")] : [];
-  const toc = document.querySelector("[data-toc]");
-  const tocLinks = [];
-  if (toc && headings.length > 1) {
-    headings.forEach((heading, index) => {
-      if (!heading.id) {
-        let id = `section-${index + 1}`;
-        while (document.getElementById(id)) id += "-heading";
-        heading.id = id;
-      }
-      const link = document.createElement("a");
-      link.href = `#${encodeURIComponent(heading.id)}`;
-      link.textContent = heading.textContent;
-      if (heading.tagName === "H3") link.classList.add("toc-sub");
-      toc.append(link);
-      tocLinks.push(link);
-    });
-    document.querySelector("[data-outline]").hidden = false;
-  }
   if (progress && content) progress.hidden = false;
   let scheduled = false;
   const updateScroll = () => {
@@ -60,16 +41,7 @@
       const fraction = Math.max(0, Math.min(1, (120 - rect.top) / travel));
       progress.firstElementChild.style.transform = `scaleX(${fraction})`;
     }
-    if (tocLinks.length) {
-      let active = 0;
-      headings.forEach((heading, index) => {
-        if (heading.getBoundingClientRect().top <= 140) active = index;
-      });
-      tocLinks.forEach((link, index) => {
-        if (index === active) link.setAttribute("aria-current", "location");
-        else link.removeAttribute("aria-current");
-      });
-    }
+
   };
   const scheduleScroll = () => {
     if (!scheduled) {

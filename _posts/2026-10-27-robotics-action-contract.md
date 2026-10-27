@@ -1,4 +1,8 @@
 ---
+chapter_path:
+- 第一章 · 动作与控制
+- 1.1 接口与动作语义
+chapter_order: 10
 topic: robotics
 layout: post
 title: "先让模型和机器人说同一种语言"
