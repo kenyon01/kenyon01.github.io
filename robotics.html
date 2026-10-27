@@ -35,7 +35,9 @@ permalink: /robotics/
     <p class="robotics-muted" data-robotics-count role="status" aria-live="polite"></p>
     <div class="robotics-notes">
       {% assign robotics_posts = site.posts | where: 'topic', 'robotics' %}
-      {% assign legacy_posts = site.posts | where_exp: 'post', "post.topic == nil or post.topic == ''" | where_exp: 'post', "post.tags contains '具身智能'" %}
+      {% assign legacy_posts = site.posts | where_exp: 'post', 'post.topic == nil' %}
+      {% assign blank_topic_posts = site.posts | where_exp: 'post', "post.topic == ''" %}
+      {% assign legacy_posts = legacy_posts | concat: blank_topic_posts | where_exp: 'post', "post.tags contains '具身智能'" %}
       {% assign robotics_posts = robotics_posts | concat: legacy_posts | sort: 'date' | reverse %}
       {% for post in robotics_posts %}
       <a class="robotics-note" href="{{ post.url | relative_url }}" data-robotics-note data-tags="{{ post.tags | join: ' ' | escape }}">
