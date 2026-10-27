@@ -1,0 +1,27 @@
+---
+layout: page
+---
+{{ content }}
+{% assign topic_posts = site.posts | where_exp: 'post', 'post.tags contains page.topic_tag' %}
+{% if topic_posts.size > 0 %}
+<div class="archive">
+  {% for post in topic_posts %}
+  <a class="archive-item" href="{{ post.url | relative_url }}">
+    <div class="archive-date"><strong>{{ post.date | date: '%d' }}</strong><span>{{ post.date | date: '%Y.%m' }}</span></div>
+    <div class="archive-copy">
+      <h2>{{ post.title | escape }}</h2>
+      <p>{{ post.description | default: post.excerpt | strip_html | truncate: 120 | escape }}</p>
+      {% if post.tags %}<div class="tag-row">{% for tag in post.tags %}<span>{{ tag | escape }}</span>{% endfor %}</div>{% endif %}
+    </div>
+    <span class="post-arrow" aria-hidden="true">↗</span>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<section class="project-note" aria-label="栏目状态">
+  <p class="eyebrow">NOTES IN PROGRESS</p>
+  <h2>学习正在发生，笔记陆续整理。</h2>
+  <p>{{ page.empty_description | escape }}</p>
+  <a class="text-link" href="{{ '/blog/' | relative_url }}">先看看已有文章 <span aria-hidden="true">→</span></a>
+</section>
+{% endif %}

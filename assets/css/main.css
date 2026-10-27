@@ -122,9 +122,10 @@ img {
 .site-nav {
   display: flex;
   align-items: center;
-  gap: 32px;
+  gap: 24px;
 }
 .site-nav a {
+  white-space: nowrap;
   color: #515156;
   font-size: 13px;
   transition: color 0.2s;
