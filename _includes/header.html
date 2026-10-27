@@ -13,9 +13,10 @@
       <a href="{{ '/' | relative_url }}" {% if page.url == '/' %}aria-current="page"{% endif %}>首页</a>
       <a href="{{ '/projects/' | relative_url }}" {% if page.url == '/projects/' %}aria-current="page"{% endif %}>项目</a>
       <a href="{{ '/blog/' | relative_url }}" {% if page.url contains '/blog/' %}aria-current="page"{% endif %}>文章</a>
-      <a href="{{ '/robotics/' | relative_url }}" {% if page.url == '/robotics/' %}aria-current="page"{% endif %}>具身智能</a>
-      <a href="{{ '/post-training/' | relative_url }}" {% if page.url == '/post-training/' %}aria-current="page"{% endif %}>模型后训练</a>
-      <a href="{{ '/quant/' | relative_url }}" {% if page.url == '/quant/' %}aria-current="page"{% endif %}>量化交易</a>
+      {% assign navigation_topics = site.topics | sort: 'order' %}
+      {% for topic in navigation_topics %}{% if topic.show_in_nav %}
+      <a href="{{ topic.url | relative_url }}" {% if page.url == topic.url %}aria-current="page"{% endif %}>{{ topic.title | escape }}</a>
+      {% endif %}{% endfor %}
       <a href="{{ '/about/' | relative_url }}" {% if page.url == '/about/' %}aria-current="page"{% endif %}>关于</a>
       <a class="nav-github" href="https://github.com/kenyon01" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
     </nav>

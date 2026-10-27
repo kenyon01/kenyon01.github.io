@@ -62,14 +62,13 @@ collections:
         hint: 用一两句话说明文章内容，会显示在文章列表和搜索结果中。
       - label: 所属栏目
         name: topic
-        widget: select
+        widget: relation
         default: general
-        options:
-          - {label: 具身智能, value: robotics}
-          - {label: 模型后训练, value: post-training}
-          - {label: 量化交易, value: quant}
-          - {label: 其他文章, value: general}
-        hint: 选择文章归属。公开并上架后进入对应栏目；“其他文章”只显示在文章列表中。标签用于补充主题，不决定栏目。
+        collection: topics
+        value_field: "{{slug}}"
+        search_fields: [title]
+        display_fields: [title]
+        hint: 选择已有栏目，或点击「添加栏目」新建，随文章一起保存。栏目名称和简介会公开；文章仍按自己的阅读权限发布。
       - label: 发布日期
         name: date
         widget: datetime
@@ -122,3 +121,43 @@ collections:
         name: body
         widget: richtext
         hint: 支持 Markdown、代码块、链接和图片。
+  - name: topics
+    label: 栏目管理
+    label_singular: 栏目
+    description: 新建或修改栏目，保存后名称和简介会公开发布。文章编辑页可选择这里的所有栏目。栏目不支持删除，可关闭导航显示。
+    folder: /_topics
+    create: true
+    delete: false
+    extension: md
+    format: frontmatter
+    slug: "{{slug}}"
+    summary: "{{title}}"
+    sortable_fields:
+      fields: [order, title]
+      default:
+        field: order
+        direction: ascending
+    fields:
+      - label: 栏目名称
+        name: title
+        widget: string
+        maxlength: 80
+        hint: 例如：数字信号处理。新栏目会自动生成独立页面。
+      - label: 栏目简介
+        name: description
+        widget: text
+        required: false
+        maxlength: 2000
+      - label: 导航顺序
+        name: order
+        widget: number
+        value_type: int
+        default: 50
+        min: 1
+        max: 1000
+        hint: 数字越小越靠前。
+      - label: 显示在主导航
+        name: show_in_nav
+        widget: boolean
+        default: true
+        hint: 关闭后仍可在文章中选择该栏目，栏目页面也仍可访问。

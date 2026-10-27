@@ -9,4 +9,7 @@ layout: null
 {% for post in site.posts %}
   <url><loc>{{ post.url | absolute_url }}</loc><lastmod>{{ post.date | date_to_xmlschema }}</lastmod></url>
 {% endfor %}
+{% for topic in site.topics %}
+  <url><loc>{{ topic.url | absolute_url | xml_escape }}</loc></url>
+{% endfor %}
 </urlset>

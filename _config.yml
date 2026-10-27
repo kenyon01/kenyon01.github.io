@@ -13,6 +13,10 @@ kramdown:
   input: GFM
   syntax_highlighter: rouge
 future: false
+collections:
+  topics:
+    output: true
+    permalink: /topics/:name/
 exclude:
   - cms-customization
   - README.md

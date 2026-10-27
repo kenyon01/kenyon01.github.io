@@ -97,6 +97,7 @@ img {
   gap: 24px;
 }
 .brand {
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -121,8 +122,11 @@ img {
 }
 .site-nav {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   align-items: center;
   gap: 24px;
+  row-gap: 10px;
 }
 .site-nav a {
   white-space: nowrap;
