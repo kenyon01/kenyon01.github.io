@@ -1,3 +1,5 @@
 .cms-build/
 .private-storage/
 .private-secrets/
+__pycache__/
+*.pyc

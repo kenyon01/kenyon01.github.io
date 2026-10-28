@@ -95,3 +95,4 @@ visibility: private
 后台基于 Sveltia CMS 0.218.0，固定源码提交 `00c44da6b919d15e559f51ca54cd96237ae556ee`。定制补丁位于 `cms-customization/publication.patch`，只增加文章列表操作与状态，复用原生保存、冲突检测与登录。
 
 使用 Node.js 24.19+ 和 pnpm，运行 `powershell -File cms-customization/build.ps1` 可重建 `admin/vendor/sveltia-cms.js`。构建目录 `.cms-build` 不提交。保留上游 MIT 许可证；语言包等按上游固定版本从 CDN 加载。
+完整 HTML 实验报告可以通过文章的「HTML 实验报告链接」嵌入，保留原排版、图表、视频和数据下载。报告文件托管在腾讯云，GitHub 只保存摘要和链接；准备方式见 [HTML 报告发布](deploy/reports/README.md)。

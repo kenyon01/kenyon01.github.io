@@ -28,6 +28,14 @@ layout: reader
   <div class="reading-layout">
     <div class="post-content" data-post-content>
       {{ content }}
+      {% assign report_prefix = page.html_report_url | slice: 0, 43 %}
+      {% if report_prefix == 'https://www.nlearn.net/robot-media/reports/' %}
+      <section class="html-report" aria-label="HTML 实验报告">
+        <h2>完整实验报告</h2>
+        <p><a href="{{ page.html_report_url | escape }}" target="_blank" rel="noopener noreferrer">在新窗口打开报告 ↗</a></p>
+        <iframe data-html-report src="{{ page.html_report_url | escape }}" title="{{ page.title | escape }}：完整实验报告" sandbox="allow-scripts allow-downloads allow-modals" referrerpolicy="no-referrer" loading="lazy" style="width:100%;height:1200px;border:1px solid #8883;border-radius:8px;background:white"></iframe>
+      </section>
+      {% endif %}
       {% if page.videos.size > 0 %}
       <section aria-label="实验视频">
         <h2>实验视频</h2>

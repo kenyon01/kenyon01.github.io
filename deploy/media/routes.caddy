@@ -16,6 +16,21 @@ handle_path /robot-media/videos/* {
     }
     respond 404
 }
+handle_path /robot-media/reports/* {
+    @report path_regexp report ^/[a-f0-9]{64}/[A-Za-z0-9][A-Za-z0-9._/-]*\.(html|mp4|json|jsonl|csv|txt|png|jpg|jpeg|gif|webp|css|js|woff|woff2)$
+    handle @report {
+        root * /opt/robot-learning/reports
+        @reportData path *.json *.jsonl *.csv *.txt
+        header @reportData Content-Disposition attachment
+        header -X-Frame-Options
+        header X-Content-Type-Options nosniff
+        header Referrer-Policy no-referrer
+        header Cache-Control "public, max-age=31536000, immutable"
+        header Content-Security-Policy "sandbox allow-scripts allow-downloads allow-modals; default-src 'none'; img-src 'self' data:; media-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors https://kenyon01.github.io http://43.134.239.33"
+        file_server
+    }
+    respond 404
+}
 handle /robot-media/* {
     respond 404
 }

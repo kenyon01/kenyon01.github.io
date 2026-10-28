@@ -21,7 +21,14 @@ addition = '    import /etc/caddy/snippets/robot-media.caddy\n'
 if addition not in s:
     if s.count(marker) != 1:
         raise SystemExit('Expected one existing HTTPS site; refusing to change config')
-    p.write_text(s.replace(marker, marker + addition, 1))
+    s = s.replace(marker, marker + addition, 1)
+frame_rule = '    @nonReportFrames not path /robot-media/reports/*\n    header @nonReportFrames X-Frame-Options DENY\n'
+if frame_rule not in s:
+    original = '        X-Frame-Options DENY\n'
+    if s.count(marker) != 1 or s.count(original) != 1:
+        raise SystemExit('Expected one existing frame restriction; refusing to change config')
+    s = s.replace(original, '', 1).replace(marker, marker + frame_rule, 1)
+p.write_text(s)
 PY
 if ! caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile; then
   cp -p "$backup" /etc/caddy/Caddyfile

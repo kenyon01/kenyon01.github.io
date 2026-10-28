@@ -138,9 +138,17 @@ collections:
             widget: string
             pattern: ['^https://www\.nlearn\.net/robot-media/videos/[a-f0-9]{64}\.mp4$', '请上传到腾讯云或选择已上传的视频。']
       - label: 正文
+        # HTML reports keep their layout and media in the isolated Tencent report directory.
+        # The article itself remains an ordinary editable post.
         name: body
         widget: richtext
         hint: 支持 Markdown、代码块、链接和图片。
+      - label: HTML 实验报告链接
+        name: html_report_url
+        widget: string
+        required: false
+        pattern: ['^https://www\.nlearn\.net/robot-media/reports/[a-f0-9]{64}/index\.html$', '请填写已发布到腾讯云的 HTML 报告链接。']
+        hint: 可嵌入完整 HTML 报告，保留原排版、图表和视频；正文可填写报告摘要。
   - name: topics
     label: 栏目管理
     label_singular: 栏目
