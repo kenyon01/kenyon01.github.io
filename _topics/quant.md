@@ -1,5 +1,5 @@
 ---
-title: 量化交易
+title: 量化
 description: 从行情数据到策略回测，记录量化研究、交易工具与风险评估中的思考和实践。
 order: 30
 show_in_nav: true
