@@ -28,6 +28,7 @@ try {
   Invoke-Checked pnpm exec vitest run --project unit src/lib/services/contents/chapter-graph.test.js src/lib/services/contents/chapter-policy.test.js
   Invoke-Checked pnpm exec vitest run --project unit src/lib/services/contents/collection/view/chapter-topics.test.js src/lib/components/contents/list/chapter-topic-filter.test.js
   Invoke-Checked pnpm exec vitest run --project unit src/lib/services/contents/collection/view/chapter-order.test.js src/lib/services/contents/collection/entries/reorder/index.test.js src/lib/services/contents/draft/save/sort-order.test.js
+  Invoke-Checked pnpm exec vitest run --project unit src/lib/services/contents/collection/view/chapter-tree.test.js src/lib/components/contents/list/chapter-tree-list.test.js
   Invoke-Checked pnpm build
   $vendor = Join-Path $repoRoot 'admin/vendor'
   New-Item -ItemType Directory -Force -Path $vendor | Out-Null

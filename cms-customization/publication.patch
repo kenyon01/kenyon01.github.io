@@ -647,6 +647,427 @@ index 0000000..540b890
 +  expect(document.body.textContent).toContain('同一上级内拖动或上下移动');
 +  expect(chapterTopicSelection.current).toEqual(['robotics']);
 +});
+diff --git a/src/lib/components/contents/list/chapter-tree-list.svelte b/src/lib/components/contents/list/chapter-tree-list.svelte
+new file mode 100644
+index 0000000..69166dd
+--- /dev/null
++++ b/src/lib/components/contents/list/chapter-tree-list.svelte
+@@ -0,0 +1,288 @@
++<script>
++  import { untrack } from 'svelte';
++
++  import { goto } from '$lib/services/app/navigation';
++  import { selectedEntries } from '$lib/services/contents/collection/entries';
++  import {
++    reorderDirty,
++    reorderedEntries,
++    reordering,
++  } from '$lib/services/contents/collection/view';
++  import {
++    buildChapterOutline,
++    flattenChapterOutline,
++    getChapterSiblings,
++    moveChapterBranch,
++  } from '$lib/services/contents/collection/view/chapter-tree';
++
++  /** @type {{entries: object[], topics: object[], collection: object}} */
++  const { entries, topics, collection } = $props();
++  const outline = $derived(buildChapterOutline(entries, topics, collection._i18n.defaultLocale));
++  let editing = $state([]);
++  let collapsed = $state([]);
++  let editingBefore = $state(false);
++  let dragged = $state();
++  let dropTarget = $state();
++  let dropAfter = $state(false);
++  const shown = $derived(reordering.current ? editing : outline);
++
++  $effect(() => {
++    const active = reordering.current;
++
++    if (active && !editingBefore) {
++      editing = untrack(() => outline);
++      reorderedEntries.current = flattenChapterOutline(editing);
++    }
++
++    if (!active) {
++      editing = [];
++      dragged = undefined;
++      dropTarget = undefined;
++    }
++
++    editingBefore = active;
++  });
++
++  /**
++   * Commit a sibling move to the local preview, leaving persistence to the toolbar.
++   * @param {string} source Source chapter ID.
++   * @param {string} target Target chapter ID.
++   * @param {boolean} [after] Place after the target.
++   */
++  const move = (source, target, after = false) => {
++    const next = moveChapterBranch(editing, source, target, after);
++
++    if (next === editing) return;
++    editing = next;
++    reorderDirty.current = true;
++    reorderedEntries.current = flattenChapterOutline(editing);
++  };
++</script>
++
++{#snippet branch(nodes, depth)}
++  <ol aria-label={`第${depth + 1}级章节`}>
++    {#each nodes as node, index (node.id)}
++      {@const expanded = !collapsed.includes(node.id)}
++      <li>
++        <div
++          role="group"
++          aria-label={node.title}
++          class="chapter-row"
++          class:drag-source={dragged === node.id}
++          class:drop-before={dropTarget === node.id && !dropAfter}
++          class:drop-after={dropTarget === node.id && dropAfter}
++          draggable={reordering.current}
++          ondragstart={(event) => {
++            if (!reordering.current) return;
++            dragged = node.id;
++
++            if (event.dataTransfer) {
++              event.dataTransfer.effectAllowed = 'move';
++              event.dataTransfer.setData('text/plain', node.id);
++            }
++          }}
++          ondragover={(event) => {
++            const siblings = dragged && getChapterSiblings(editing, dragged);
++
++            const accepted =
++              reordering.current &&
++              dragged !== node.id &&
++              siblings &&
++              siblings === getChapterSiblings(editing, node.id);
++
++            if (accepted) {
++              event.preventDefault();
++              dropTarget = node.id;
++
++              const rect = event.currentTarget.getBoundingClientRect();
++
++              dropAfter = event.clientY >= rect.top + rect.height / 2;
++            } else if (dropTarget === node.id) dropTarget = undefined;
++            if (event.dataTransfer) event.dataTransfer.dropEffect = accepted ? 'move' : 'none';
++          }}
++          ondragleave={() => {
++            if (dropTarget === node.id) dropTarget = undefined;
++          }}
++          ondrop={(event) => {
++            event.preventDefault();
++            event.stopPropagation();
++            if (reordering.current && dragged && dropTarget === node.id)
++              move(dragged, node.id, dropAfter);
++            dragged = undefined;
++            dropTarget = undefined;
++          }}
++          ondragend={() => {
++            dragged = undefined;
++            dropTarget = undefined;
++          }}
++        >
++          {#if node.children.length}
++            <button
++              type="button"
++              class="fold"
++              aria-label={`${expanded ? '折叠' : '展开'}${node.title}`}
++              aria-expanded={expanded}
++              onclick={() => {
++                collapsed = expanded
++                  ? [...collapsed, node.id]
++                  : collapsed.filter((id) => id !== node.id);
++              }}>{expanded ? '▾' : '▸'}</button
++            >
++          {:else}<span class="fold placeholder" aria-hidden="true">·</span>{/if}
++          {#if !reordering.current}
++            <input
++              type="checkbox"
++              aria-label={`选择${node.title}`}
++              checked={selectedEntries.current.some((entry) => entry.id === node.entry.id)}
++              onchange={(event) => {
++                selectedEntries.current = event.currentTarget.checked
++                  ? [...selectedEntries.current, node.entry]
++                  : selectedEntries.current.filter((entry) => entry.id !== node.entry.id);
++              }}
++            />
++            <button
++              type="button"
++              class="chapter-title"
++              onclick={() =>
++                goto(`/collections/${collection.name}/entries/${node.entry.subPath}`, {
++                  transitionType: 'forwards',
++                })}>{node.title}</button
++            >
++          {:else}
++            <span class="chapter-title">{node.title}</span>
++          {/if}
++          <span class="level">第{depth + 1}级</span>
++          {#if reordering.current}
++            <div class="moves">
++              <button
++                type="button"
++                aria-label={`上移${node.title}`}
++                disabled={index === 0}
++                onclick={() => move(node.id, nodes[index - 1].id)}>↑</button
++              >
++              <button
++                type="button"
++                aria-label={`下移${node.title}`}
++                disabled={index === nodes.length - 1}
++                onclick={() => move(node.id, nodes[index + 1].id, true)}>↓</button
++              >
++            </div>
++          {/if}
++        </div>
++        {#if node.children.length && expanded}
++          {@render branch(node.children, depth + 1)}
++        {/if}
++      </li>
++    {/each}
++  </ol>
++{/snippet}
++
++<div class="chapter-tree-list" id="entry-list">
++  {#each shown as topic (topic.id)}
++    <section aria-label={`${topic.title}章节目录`}>
++      <h3>{topic.title}</h3>
++      {@render branch(topic.children, 0)}
++    </section>
++  {/each}
++</div>
++
++<style>
++  .chapter-tree-list {
++    padding: 0 16px 24px;
++  }
++  h3 {
++    margin: 12px 0 6px;
++    padding: 10px;
++    background: #8881;
++    font-size: 1em;
++  }
++  ol {
++    list-style: none;
++    margin: 0;
++    padding: 0;
++  }
++  ol ol {
++    margin-left: 24px;
++    padding-left: 12px;
++    border-left: 1px solid #8885;
++  }
++  .chapter-row {
++    display: flex;
++    align-items: center;
++    gap: 8px;
++    min-height: 48px;
++    border-bottom: 1px solid #8883;
++    padding: 4px 8px;
++  }
++  .chapter-row[draggable='true'] {
++    cursor: grab;
++  }
++  .drag-source {
++    opacity: 0.4;
++  }
++  .drop-before {
++    box-shadow: inset 0 2px #60a5fa;
++  }
++  .drop-after {
++    box-shadow: inset 0 -2px #60a5fa;
++  }
++  button {
++    font: inherit;
++    color: inherit;
++    background: transparent;
++    border: 0;
++    cursor: pointer;
++    border-radius: 4px;
++  }
++  button:hover {
++    background: #8882;
++  }
++  button:focus-visible {
++    outline: 2px solid #60a5fa;
++    outline-offset: 2px;
++  }
++  button:disabled {
++    opacity: 0.3;
++    cursor: default;
++  }
++  .fold {
++    flex: 0 0 28px;
++    width: 28px;
++    padding: 6px 0;
++    text-align: center;
++  }
++  .chapter-title {
++    flex: 1;
++    min-width: 0;
++    text-align: left;
++    overflow-wrap: anywhere;
++    padding: 6px 0;
++  }
++  .level {
++    font-size: 0.75em;
++    opacity: 0.55;
++    white-space: nowrap;
++  }
++  .moves {
++    display: flex;
++    flex: none;
++    gap: 4px;
++  }
++  .moves button {
++    padding: 6px 10px;
++    font-size: 1.2em;
++  }
++  @media (max-width: 600px) {
++    ol ol {
++      margin-left: 12px;
++      padding-left: 6px;
++    }
++    .chapter-tree-list {
++      padding-inline: 8px;
++    }
++    .chapter-row {
++      gap: 4px;
++      padding-inline: 2px;
++    }
++  }
++</style>
+diff --git a/src/lib/components/contents/list/chapter-tree-list.test.js b/src/lib/components/contents/list/chapter-tree-list.test.js
+new file mode 100644
+index 0000000..6030439
+--- /dev/null
++++ b/src/lib/components/contents/list/chapter-tree-list.test.js
+@@ -0,0 +1,121 @@
++// @vitest-environment happy-dom
++import { mount, tick, unmount } from 'svelte';
++import { afterEach, expect, test, vi } from 'vitest';
++
++import { goto } from '$lib/services/app/navigation';
++import { reorderDirty, reorderedEntries, reordering } from '$lib/services/contents/collection/view';
++
++import ChapterTreeList from './chapter-tree-list.svelte';
++
++vi.mock('$lib/services/app/navigation', () => ({ goto: vi.fn() }));
++vi.mock('$lib/services/contents/collection/entries', () => ({ selectedEntries: { current: [] } }));
++vi.mock('$lib/services/contents/collection/view', async () => {
++  const { createRawState } = await import('$lib/services/utils/state.svelte');
++
++  return {
++    reordering: createRawState(false),
++    reorderDirty: createRawState(false),
++    reorderedEntries: createRawState([]),
++  };
++});
++
++/**
++ * @param slug
++ * @param title
++ * @param parent
++ * @param order
++ */
++const entry = (slug, title, parent = '', order = 1) => ({
++  id: slug,
++  slug,
++  subPath: slug,
++  locales: { _default: { content: { title, topic: 'robotics', parent, order } } },
++});
++
++const entries = [
++  entry('a', '第一章'),
++  entry('b', '第二章', '', 2),
++  entry('a1', '接口', 'a'),
++  entry('a2', '执行', 'a', 2),
++  entry('deep', '三级实验', 'a1'),
++];
++
++const topics = [entry('robotics', '具身智能')];
++let component;
++/**
++ * @param label
++ */
++const button = (label) => document.querySelector(`button[aria-label="${label}"]`);
++/**
++ *
++ */
++const ids = () => reorderedEntries.current.map((e) => e.slug);
++
++/**
++ *
++ */
++const open = async () => {
++  component = mount(ChapterTreeList, {
++    target: document.body,
++    props: {
++      entries,
++      topics,
++      collection: { name: 'chapters', _i18n: { defaultLocale: '_default' } },
++    },
++  });
++  await tick();
++};
++
++afterEach(async () => {
++  if (component) await unmount(component);
++  reordering.current = false;
++  reorderDirty.current = false;
++  reorderedEntries.current = [];
++  document.body.innerHTML = '';
++  vi.clearAllMocks();
++});
++
++test('browsing folds recursively and opens the correct chapter editor', async () => {
++  await open();
++  expect(document.body.textContent).toContain('第3级');
++  button('折叠第一章').click();
++  await tick();
++  expect(document.body.textContent).not.toContain('三级实验');
++  button('展开第一章').click();
++  await tick();
++  [...document.querySelectorAll('.chapter-title')].find((e) => e.textContent === '接口').click();
++  expect(goto).toHaveBeenCalledWith('/collections/chapters/entries/a1', {
++    transitionType: 'forwards',
++  });
++});
++
++test('collapsed branches stay in the save payload, move together, and cancel restores the original tree', async () => {
++  await open();
++  button('折叠第一章').click();
++  await tick();
++  reordering.current = true;
++  await tick();
++  expect(ids()).toEqual(['a', 'a1', 'deep', 'a2', 'b']);
++  expect(button('上移第一章').disabled).toBe(true);
++  button('下移第一章').click();
++  await tick();
++  expect(ids()).toEqual(['b', 'a', 'a1', 'deep', 'a2']);
++  expect(reorderDirty.current).toBe(true);
++  button('展开第一章').click();
++  await tick();
++  expect(button('上移接口').disabled).toBe(true);
++  expect(button('下移执行').disabled).toBe(true);
++  expect(button('上移三级实验').disabled && button('下移三级实验').disabled).toBe(true);
++  button('下移接口').click();
++  await tick();
++  expect(ids()).toEqual(['b', 'a', 'a2', 'a1', 'deep']);
++  reordering.current = false;
++  await tick();
++  expect([...document.querySelectorAll('.chapter-title')].map((e) => e.textContent)).toEqual([
++    '第一章',
++    '接口',
++    '三级实验',
++    '执行',
++    '第二章',
++  ]);
++});
 diff --git a/src/lib/components/contents/list/entry-list-item-cells.svelte b/src/lib/components/contents/list/entry-list-item-cells.svelte
 index 01635b0..5ec60a2 100644
 --- a/src/lib/components/contents/list/entry-list-item-cells.svelte
@@ -681,6 +1102,138 @@ index 01635b0..5ec60a2 100644
    .label {
      :global {
        .icon.home {
+diff --git a/src/lib/components/contents/list/entry-list.svelte b/src/lib/components/contents/list/entry-list.svelte
+index 7e92c5f..7d1bb4a 100644
+--- a/src/lib/components/contents/list/entry-list.svelte
++++ b/src/lib/components/contents/list/entry-list.svelte
+@@ -5,11 +5,13 @@
+ 
+   import ListContainer from '$lib/components/common/list-container.svelte';
+   import ListingGrid from '$lib/components/common/listing-grid.svelte';
++  import ChapterTreeList from '$lib/components/contents/list/chapter-tree-list.svelte';
+   import EntryListItem from '$lib/components/contents/list/entry-list-item.svelte';
+   import EntryReorderList from '$lib/components/contents/list/entry-reorder-list.svelte';
+   import CreateEntryButton from '$lib/components/contents/toolbar/create-entry-button.svelte';
+   import { getGroupLabel, isGroupCollapsed, setGroupCollapsed } from '$lib/services/common/view';
+   import { selectedCollection } from '$lib/services/contents/collection';
++  import { getEntriesByCollection } from '$lib/services/contents/collection/entries';
+   import {
+     entryGroups,
+     listedEntries,
+@@ -32,56 +34,64 @@
+ <ListContainer aria-label={_('entry_list')}>
+   {#if collection}
+     {#if allEntries.length || listedUnpublishedEntries.current.length}
+-      {@const { defaultLocale } = collection._i18n}
+-      <ListingGrid
+-        {viewType}
+-        id="entry-list"
+-        aria-label={_('entries')}
+-        aria-rowcount={listedEntries.current.length + listedUnpublishedEntries.current.length}
+-      >
+-        <!-- @todo Implement custom table column option that can replace summary template -->
+-        {#if reordering.current}
+-          <EntryReorderList {collection} {viewType} />
+-        {:else}
+-          {#if listedUnpublishedEntries.current.length}
+-            <GridBody label={_('workflow.unpublished_entries')}>
+-              {#each listedUnpublishedEntries.current as entry (entry.id)}
+-                <EntryListItem {collection} {entry} {viewType} />
+-              {/each}
+-            </GridBody>
+-          {/if}
+-          {#each entryGroups.current as { name, entries } (name)}
+-            {#await sleep() then}
+-              <GridBody
+-                label={name !== '*'
+-                  ? getGroupLabel(name)
+-                  : listedUnpublishedEntries.current.length
+-                    ? _('workflow.published_entries')
+-                    : undefined}
+-                collapsible={name !== '*'}
+-                expanded={!isGroupCollapsed(currentView.current, name)}
+-                onChange={({ detail: { expanded } }) => {
+-                  currentView.current = setGroupCollapsed(currentView.current, name, !expanded);
+-                }}
+-              >
+-                <InfiniteScroll
+-                  items={entries.filter(
+-                    ({ locales }) =>
+-                      !!(locales[defaultLocale] ?? Object.values(locales)[0])?.content,
+-                  )}
+-                  itemKey="id"
+-                >
+-                  {#snippet renderItem(/** @type {Entry} */ entry)}
+-                    {#await sleep() then}
+-                      <EntryListItem {collection} {entry} {viewType} />
+-                    {/await}
+-                  {/snippet}
+-                </InfiniteScroll>
++      {#if collection.name === 'chapters'}
++        <ChapterTreeList
++          {collection}
++          entries={[...allEntries, ...listedUnpublishedEntries.current]}
++          topics={getEntriesByCollection('topics')}
++        />
++      {:else}
++        {@const { defaultLocale } = collection._i18n}
++        <ListingGrid
++          {viewType}
++          id="entry-list"
++          aria-label={_('entries')}
++          aria-rowcount={listedEntries.current.length + listedUnpublishedEntries.current.length}
++        >
++          <!-- @todo Implement custom table column option that can replace summary template -->
++          {#if reordering.current}
++            <EntryReorderList {collection} {viewType} />
++          {:else}
++            {#if listedUnpublishedEntries.current.length}
++              <GridBody label={_('workflow.unpublished_entries')}>
++                {#each listedUnpublishedEntries.current as entry (entry.id)}
++                  <EntryListItem {collection} {entry} {viewType} />
++                {/each}
+               </GridBody>
+-            {/await}
+-          {/each}
+-        {/if}
+-      </ListingGrid>
++            {/if}
++            {#each entryGroups.current as { name, entries } (name)}
++              {#await sleep() then}
++                <GridBody
++                  label={name !== '*'
++                    ? getGroupLabel(name)
++                    : listedUnpublishedEntries.current.length
++                      ? _('workflow.published_entries')
++                      : undefined}
++                  collapsible={name !== '*'}
++                  expanded={!isGroupCollapsed(currentView.current, name)}
++                  onChange={({ detail: { expanded } }) => {
++                    currentView.current = setGroupCollapsed(currentView.current, name, !expanded);
++                  }}
++                >
++                  <InfiniteScroll
++                    items={entries.filter(
++                      ({ locales }) =>
++                        !!(locales[defaultLocale] ?? Object.values(locales)[0])?.content,
++                    )}
++                    itemKey="id"
++                  >
++                    {#snippet renderItem(/** @type {Entry} */ entry)}
++                      {#await sleep() then}
++                        <EntryListItem {collection} {entry} {viewType} />
++                      {/await}
++                    {/snippet}
++                  </InfiniteScroll>
++                </GridBody>
++              {/await}
++            {/each}
++          {/if}
++        </ListingGrid>
++      {/if}
+     {:else if listedEntries.current.length}
+       <EmptyState>
+         <span role="none">{_('no_entries_found')}</span>
 diff --git a/src/lib/components/contents/list/entry-reorder-list.svelte b/src/lib/components/contents/list/entry-reorder-list.svelte
 index b505bf8..6a2e654 100644
 --- a/src/lib/components/contents/list/entry-reorder-list.svelte
@@ -1001,6 +1554,33 @@ index 0000000..52e3939
 +  expect(setVisibility).toHaveBeenCalledTimes(1);
 +  expect(document.body.textContent).toContain('已上架 · 私有');
 +});
+diff --git a/src/lib/components/contents/list/secondary-toolbar.svelte b/src/lib/components/contents/list/secondary-toolbar.svelte
+index 7d06bb7..dde03c4 100644
+--- a/src/lib/components/contents/list/secondary-toolbar.svelte
++++ b/src/lib/components/contents/list/secondary-toolbar.svelte
+@@ -57,13 +57,15 @@
+       />
+     {/if}
+     <Spacer flex />
+-    <SortMenu
+-      disabled={!hasMultipleEntries || !sortKeys.current.length}
+-      {currentView}
+-      sortKeys={sortKeys.current}
+-      {collectionName}
+-      aria-controls="entry-list"
+-    />
++    {#if collectionName !== 'chapters'}
++      <SortMenu
++        disabled={!hasMultipleEntries || !sortKeys.current.length}
++        {currentView}
++        sortKeys={sortKeys.current}
++        {collectionName}
++        aria-controls="entry-list"
++      />
++    {/if}
+     {#if viewFilters.current?.length}
+       <FilterMenu
+         disabled={!hasMultipleEntries}
 diff --git a/src/lib/services/assets/video-policy.js b/src/lib/services/assets/video-policy.js
 new file mode 100644
 index 0000000..1ab585f
@@ -1873,6 +2453,220 @@ index 0000000..3649b71
 +      { value: '数字信号处理', label: '数字信号处理' },
 +    ]);
 +  });
++});
+diff --git a/src/lib/services/contents/collection/view/chapter-tree.js b/src/lib/services/contents/collection/view/chapter-tree.js
+new file mode 100644
+index 0000000..32b9dd7
+--- /dev/null
++++ b/src/lib/services/contents/collection/view/chapter-tree.js
+@@ -0,0 +1,106 @@
++import { groupChapterSiblings } from '$lib/services/contents/collection/view/chapter-order';
++import { moveListItem } from '$lib/services/utils/drag-sorting';
++
++/**
++ * Build nested chapter nodes without changing stored entries or parent references.
++ * @param {object[]} entries Chapter entries.
++ * @param {object[]} topics Topic entries.
++ * @param {string} locale Content locale.
++ * @returns {object[]} Topic roots with nested chapter children.
++ */
++export const buildChapterOutline = (entries, topics, locale) => {
++  const nodes = new Map(
++    entries.map((entry) => [
++      entry.slug,
++      {
++        id: entry.slug,
++        entry,
++        title: entry.locales[locale].content.title,
++        children: [],
++      },
++    ]),
++  );
++
++  const roots = [];
++
++  groupChapterSiblings(entries, topics, locale).forEach((group) => {
++    const [topic, parent] = JSON.parse(group.name);
++
++    const children = [...group.entries]
++      .sort(
++        (a, b) =>
++          (a.locales[locale].content.order ?? 50) - (b.locales[locale].content.order ?? 50) ||
++          a.locales[locale].content.title.localeCompare(b.locales[locale].content.title, 'zh-CN', {
++            numeric: true,
++          }),
++      )
++      .map((entry) => nodes.get(entry.slug));
++
++    if (parent) nodes.get(parent).children = children;
++    else roots.push({ id: topic, title: group.label.replace(/ \/ 一级章节$/, ''), children });
++  });
++  return roots;
++};
++
++/**
++ * Find the exact sibling array containing a chapter, at any depth.
++ * @param {object[]} outline Topic roots.
++ * @param {string} id Chapter ID.
++ * @returns {object[] | undefined} Siblings, including the chapter itself.
++ */
++export const getChapterSiblings = (outline, id) => {
++  /**
++   * @param nodes
++   */
++  const visit = (nodes) =>
++    nodes.some((node) => node.id === id)
++      ? nodes
++      : nodes.map((node) => visit(node.children)).find(Boolean);
++
++  return outline.map((topic) => visit(topic.children)).find(Boolean);
++};
++
++/**
++ * Move a complete branch within its existing parent. A cross-parent/topic drop is a no-op.
++ * @param {object[]} outline Topic roots.
++ * @param {string} source Chapter being moved.
++ * @param {string} target Target sibling.
++ * @param {boolean} [after] Place after the target, rather than before it.
++ * @returns {object[]} Updated outline, or the same outline when no valid move occurred.
++ */
++export const moveChapterBranch = (outline, source, target, after = false) => {
++  const siblings = getChapterSiblings(outline, source);
++
++  if (!siblings || siblings !== getChapterSiblings(outline, target) || source === target)
++    return outline;
++
++  const from = siblings.findIndex((node) => node.id === source);
++  const drop = siblings.findIndex((node) => node.id === target) + (after ? 1 : 0);
++  const to = drop > from ? drop - 1 : drop;
++
++  if (to === from) return outline;
++
++  /**
++   * @param nodes
++   */
++  const update = (nodes) =>
++    nodes === siblings
++      ? moveListItem(nodes, from, to)
++      : nodes.map((node) => ({ ...node, children: update(node.children) }));
++
++  return outline.map((topic) => ({ ...topic, children: update(topic.children) }));
++};
++
++/**
++ * Include every descendant in saved order, even when its branch is collapsed in the editor.
++ * @param {object[]} outline Topic roots.
++ * @returns {object[]} Ordered entries for the existing CMS save operation.
++ */
++export const flattenChapterOutline = (outline) => {
++  /**
++   * @param nodes
++   */
++  const visit = (nodes) => nodes.flatMap((node) => [node.entry, ...visit(node.children)]);
++
++  return outline.flatMap((topic) => visit(topic.children));
++};
+diff --git a/src/lib/services/contents/collection/view/chapter-tree.test.js b/src/lib/services/contents/collection/view/chapter-tree.test.js
+new file mode 100644
+index 0000000..61665e2
+--- /dev/null
++++ b/src/lib/services/contents/collection/view/chapter-tree.test.js
+@@ -0,0 +1,96 @@
++import { expect, test } from 'vitest';
++
++import {
++  buildChapterOutline,
++  flattenChapterOutline,
++  getChapterSiblings,
++  moveChapterBranch,
++} from './chapter-tree';
++
++/**
++ * @param slug
++ * @param topic
++ * @param parent
++ * @param order
++ */
++const entry = (slug, topic, parent = '', order = 1) => ({
++  id: slug,
++  slug,
++  subPath: slug,
++  locales: { _default: { content: { title: slug, topic, parent, order } } },
++});
++
++const topics = [entry('robotics', '', '', 1), entry('quant', '', '', 2)];
++
++const entries = [
++  entry('a', 'robotics'),
++  entry('b', 'robotics', '', 2),
++  entry('a1', 'robotics', 'a'),
++  entry('a2', 'robotics', 'a', 2),
++  entry('x', 'robotics', 'a1'),
++  entry('y', 'robotics', 'a1', 2),
++  entry('b1', 'robotics', 'b'),
++  entry('q', 'quant'),
++];
++
++/**
++ *
++ */
++const build = () => buildChapterOutline(entries, topics, '_default');
++/**
++ * @param tree
++ */
++const ids = (tree) => flattenChapterOutline(tree).map((e) => e.slug);
++
++test('nests multiple levels under their actual parents, with siblings in stored order', () => {
++  const tree = build();
++
++  expect(ids(tree)).toEqual(['a', 'a1', 'x', 'y', 'a2', 'b', 'b1', 'q']);
++  expect(tree[0].children[0].children[0].children.map((n) => n.id)).toEqual(['x', 'y']);
++});
++
++test('moving a parent carries its full branch, without changing persisted metadata', () => {
++  const tree = build();
++  const before = JSON.stringify(entries);
++  const moved = moveChapterBranch(tree, 'a', 'b', true);
++
++  expect(ids(moved)).toEqual(['b', 'b1', 'a', 'a1', 'x', 'y', 'a2', 'q']);
++  expect(ids(tree)).toEqual(['a', 'a1', 'x', 'y', 'a2', 'b', 'b1', 'q']);
++  expect(JSON.stringify(entries)).toBe(before);
++});
++
++test('second and deeper levels move only among siblings of the exact same parent', () => {
++  const tree = build();
++
++  expect(ids(moveChapterBranch(tree, 'a1', 'a2', true))).toEqual([
++    'a',
++    'a2',
++    'a1',
++    'x',
++    'y',
++    'b',
++    'b1',
++    'q',
++  ]);
++  expect(ids(moveChapterBranch(tree, 'x', 'y', true))).toEqual([
++    'a',
++    'a1',
++    'y',
++    'x',
++    'a2',
++    'b',
++    'b1',
++    'q',
++  ]);
++  [
++    ['a1', 'b1'],
++    ['x', 'a2'],
++    ['a', 'a1'],
++    ['a', 'q'],
++    ['missing', 'a'],
++  ].forEach(([a, b]) => {
++    expect(moveChapterBranch(tree, a, b)).toBe(tree);
++  });
++  expect(getChapterSiblings(tree, 'x')).not.toBe(getChapterSiblings(tree, 'a2'));
++  expect(moveChapterBranch(tree, 'a', 'a')).toBe(tree);
 +});
 diff --git a/src/lib/services/contents/collection/view/index.js b/src/lib/services/contents/collection/view/index.js
 index bc74518..97837af 100644
