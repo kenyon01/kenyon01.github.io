@@ -474,6 +474,160 @@ index 0000000..32e9a9d
 +  expect(document.querySelector('a[href^="javascript:"]')).toBeNull();
 +  expect(getAssetBlobURL).not.toHaveBeenCalled();
 +});
+diff --git a/src/lib/components/contents/list/chapter-topic-filter.svelte b/src/lib/components/contents/list/chapter-topic-filter.svelte
+new file mode 100644
+index 0000000..9851671
+--- /dev/null
++++ b/src/lib/components/contents/list/chapter-topic-filter.svelte
+@@ -0,0 +1,85 @@
++<script>
++  import { selectedEntries } from '$lib/services/contents/collection/entries';
++  import { chapterTopicSelection } from '$lib/services/contents/collection/view/chapter-topics';
++
++  /** @type {{options: {value: string, label: string}[]}} */
++  const { options } = $props();
++
++  /**
++   * Clear selected rows when the visible set changes so hidden chapters are never counted.
++   * @param {string[]} selection Selected topic IDs.
++   */
++  const setSelection = (selection) => {
++    selectedEntries.current = [];
++    chapterTopicSelection.current = selection;
++  };
++</script>
++
++<fieldset class="chapter-topic-filter">
++  <legend>按栏目筛选</legend>
++  <button
++    type="button"
++    aria-pressed={!chapterTopicSelection.current.length}
++    onclick={() => setSelection([])}>全部栏目</button
++  >
++  {#each options as option (option.value)}
++    <label>
++      <input
++        type="checkbox"
++        checked={chapterTopicSelection.current.includes(option.value)}
++        onchange={(event) => {
++          setSelection(
++            event.currentTarget.checked
++              ? [...chapterTopicSelection.current, option.value]
++              : chapterTopicSelection.current.filter((value) => value !== option.value),
++          );
++        }}
++      />
++      <span>{option.label}</span>
++    </label>
++  {/each}
++  <span class="hint">可多选；未勾选时显示全部</span>
++</fieldset>
++
++<style>
++  .chapter-topic-filter {
++    display: flex;
++    flex-wrap: wrap;
++    align-items: center;
++    gap: 12px 20px;
++    margin: 0;
++    padding: 12px 20px;
++    border: 0;
++    border-bottom: 1px solid var(--sui-border-color, #5555);
++    font-size: var(--sui-font-size-small);
++  }
++  legend {
++    float: left;
++    margin-right: 20px;
++    font-weight: 600;
++  }
++  label {
++    display: inline-flex;
++    align-items: center;
++    gap: 6px;
++    cursor: pointer;
++  }
++  input {
++    accent-color: var(--sui-accent-color, #007acc);
++  }
++  button {
++    border: 1px solid currentColor;
++    border-radius: 5px;
++    padding: 4px 10px;
++    background: transparent;
++    color: inherit;
++    cursor: pointer;
++    font: inherit;
++  }
++  button[aria-pressed='true'] {
++    color: var(--sui-accent-color, #60a5fa);
++  }
++  .hint {
++    opacity: 0.65;
++  }
++</style>
+diff --git a/src/lib/components/contents/list/chapter-topic-filter.test.js b/src/lib/components/contents/list/chapter-topic-filter.test.js
+new file mode 100644
+index 0000000..b67057f
+--- /dev/null
++++ b/src/lib/components/contents/list/chapter-topic-filter.test.js
+@@ -0,0 +1,57 @@
++// @vitest-environment happy-dom
++import { mount, tick, unmount } from 'svelte';
++import { afterEach, expect, test, vi } from 'vitest';
++
++import { selectedEntries } from '$lib/services/contents/collection/entries';
++import { chapterTopicSelection } from '$lib/services/contents/collection/view/chapter-topics';
++
++import ChapterTopicFilter from './chapter-topic-filter.svelte';
++
++let component;
++
++vi.mock('$lib/services/contents/collection/entries', () => ({ selectedEntries: { current: [] } }));
++
++afterEach(async () => {
++  if (component) await unmount(component);
++  chapterTopicSelection.current = [];
++  selectedEntries.current = [];
++  document.body.innerHTML = '';
++});
++
++test('checkboxes combine topics, can uncheck the last option, and all clears every checkbox', async () => {
++  component = mount(ChapterTopicFilter, {
++    target: document.body,
++    props: {
++      options: [
++        { value: 'robotics', label: '具身智能' },
++        { value: 'quant', label: '量化' },
++      ],
++    },
++  });
++  await tick();
++
++  const [robotics, quant] = document.querySelectorAll('input');
++  const all = document.querySelector('button');
++
++  expect(all.getAttribute('aria-pressed')).toBe('true');
++  selectedEntries.current = [{ id: 'previous-chapter' }];
++  robotics.click();
++  await tick();
++  expect(selectedEntries.current).toEqual([]);
++  expect(chapterTopicSelection.current).toEqual(['robotics']);
++  quant.click();
++  await tick();
++  expect(chapterTopicSelection.current).toEqual(['robotics', 'quant']);
++  selectedEntries.current = [{ id: 'hidden-chapter' }];
++  all.click();
++  await tick();
++  expect(selectedEntries.current).toEqual([]);
++  expect(chapterTopicSelection.current).toEqual([]);
++  expect(robotics.checked || quant.checked).toBe(false);
++  quant.click();
++  await tick();
++  quant.click();
++  await tick();
++  expect(chapterTopicSelection.current).toEqual([]);
++  expect(all.getAttribute('aria-pressed')).toBe('true');
++});
 diff --git a/src/lib/components/contents/list/entry-list-item-cells.svelte b/src/lib/components/contents/list/entry-list-item-cells.svelte
 index 01635b0..5ec60a2 100644
 --- a/src/lib/components/contents/list/entry-list-item-cells.svelte
@@ -508,6 +662,45 @@ index 01635b0..5ec60a2 100644
    .label {
      :global {
        .icon.home {
+diff --git a/src/lib/components/contents/list/primary-toolbar.svelte b/src/lib/components/contents/list/primary-toolbar.svelte
+index 67b838b..4f2f4cf 100644
+--- a/src/lib/components/contents/list/primary-toolbar.svelte
++++ b/src/lib/components/contents/list/primary-toolbar.svelte
+@@ -12,18 +12,23 @@
+   import { marked } from 'marked';
+ 
+   import BackButton from '$lib/components/common/page-toolbar/back-button.svelte';
++  import ChapterTopicFilter from '$lib/components/contents/list/chapter-topic-filter.svelte';
+   import ReorderControls from '$lib/components/contents/list/reorder-controls.svelte';
+   import DeleteEntriesDialog from '$lib/components/contents/shared/delete-entries-dialog.svelte';
+   import CreateEntryButton from '$lib/components/contents/toolbar/create-entry-button.svelte';
+   import { goBack } from '$lib/services/app/navigation';
+   import { getCollectionLabel, selectedCollection } from '$lib/services/contents/collection';
+-  import { selectedEntries } from '$lib/services/contents/collection/entries';
++  import {
++    getEntriesByCollection,
++    selectedEntries,
++  } from '$lib/services/contents/collection/entries';
+   import {
+     collectionState,
+     listedEntries,
+     reordering,
+     setReorderMode,
+   } from '$lib/services/contents/collection/view';
++  import { getChapterTopicOptions } from '$lib/services/contents/collection/view/chapter-topics';
+   import { env } from '$lib/services/user/env.svelte';
+   import { openAuthoring } from '$lib/services/workflow/open-authoring';
+ 
+@@ -128,6 +133,9 @@
+       </FloatingActionButtonWrapper>
+     {/if}
+   </Toolbar>
++  {#if name === 'chapters' && !reordering.current}
++    <ChapterTopicFilter options={getChapterTopicOptions(getEntriesByCollection('topics'))} />
++  {/if}
+   {#if isEntryCollection && (creationDisabled || nearingQuota)}
+     <Infobar
+       dismissible={false}
 diff --git a/src/lib/components/contents/list/publication-actions.svelte b/src/lib/components/contents/list/publication-actions.svelte
 new file mode 100644
 index 0000000..eafc463
@@ -1346,6 +1539,141 @@ index 0000000..81d62d8
 +    ]),
 +  ).not.toThrow();
 +});
+diff --git a/src/lib/services/contents/collection/view/chapter-topics.js b/src/lib/services/contents/collection/view/chapter-topics.js
+new file mode 100644
+index 0000000..3ae1b31
+--- /dev/null
++++ b/src/lib/services/contents/collection/view/chapter-topics.js
+@@ -0,0 +1,38 @@
++import { createRawState } from '$lib/services/utils/state.svelte';
++
++/** Selected topic IDs for the chapter list, kept for this browser session. */
++export const chapterTopicSelection = createRawState([]);
++
++/**
++ * Build filter choices from managed topics, including topics hidden from the main navigation.
++ * @param {import('$lib/types/private').Entry[]} entries Topic entries.
++ * @returns {{value: string, label: string}[]} Choices in topic order.
++ */
++export const getChapterTopicOptions = (entries) =>
++  entries
++    .map((entry) => {
++      const content = entry.locales._default?.content ?? {};
++
++      return { value: entry.slug, label: content.title || entry.slug, order: content.order ?? 50 };
++    })
++    .sort((a, b) => a.order - b.order || a.label.localeCompare(b.label, 'zh-CN', { numeric: true }))
++    .map(({ value, label }) => ({ value, label }));
++
++/**
++ * Match selected topic IDs with OR semantics, without changing other collections.
++ * @param {import('$lib/types/private').Entry[]} entries Chapters to filter.
++ * @param {import('$lib/types/private').InternalEntryCollection} collection Current collection.
++ * @param {string[]} [selection] Selected topic IDs; empty means all chapters.
++ * @returns {import('$lib/types/private').Entry[]} Matching entries.
++ */
++export const filterChapterTopics = (
++  entries,
++  collection,
++  selection = chapterTopicSelection.current,
++) => {
++  if (collection.name !== 'chapters' || !selection.length) return entries;
++
++  return entries.filter((entry) =>
++    selection.includes(entry.locales[collection._i18n.defaultLocale]?.content.topic),
++  );
++};
+diff --git a/src/lib/services/contents/collection/view/chapter-topics.test.js b/src/lib/services/contents/collection/view/chapter-topics.test.js
+new file mode 100644
+index 0000000..3649b71
+--- /dev/null
++++ b/src/lib/services/contents/collection/view/chapter-topics.test.js
+@@ -0,0 +1,50 @@
++import { describe, expect, it } from 'vitest';
++
++import { filterChapterTopics, getChapterTopicOptions } from './chapter-topics';
++
++const collection = { name: 'chapters', _i18n: { defaultLocale: '_default' } };
++/**
++ * @param slug
++ * @param content
++ */
++const entry = (slug, content) => ({ slug, locales: { _default: { content } } });
++
++const chapters = [
++  entry('root', { topic: 'robotics' }),
++  entry('child', { topic: 'robotics', parent: 'root' }),
++  entry('quant-chapter', { topic: 'quant' }),
++  entry('dsp-chapter', { topic: '数字信号处理' }),
++];
++
++describe('chapter topic filters', () => {
++  it('shows all with no selection, a complete selected topic, or the union of selected topics', () => {
++    expect(filterChapterTopics(chapters, collection, [])).toBe(chapters);
++    expect(filterChapterTopics(chapters, collection, ['robotics']).map((e) => e.slug)).toEqual([
++      'root',
++      'child',
++    ]);
++    expect(
++      filterChapterTopics(chapters, collection, ['quant', '数字信号处理']).map((e) => e.slug),
++    ).toEqual(['quant-chapter', 'dsp-chapter']);
++    expect(filterChapterTopics(chapters, collection, ['post-training'])).toEqual([]);
++  });
++  it('matches stable IDs exactly and leaves other collections unchanged', () => {
++    expect(filterChapterTopics(chapters, collection, ['robot'])).toEqual([]);
++    expect(filterChapterTopics(chapters, { ...collection, name: 'posts' }, ['quant'])).toBe(
++      chapters,
++    );
++  });
++  it('offers newly managed and hidden topics in order with their current names', () => {
++    expect(
++      getChapterTopicOptions([
++        entry('数字信号处理', { title: '数字信号处理', order: 40, show_in_nav: false }),
++        entry('quant', { title: '量化', order: 30 }),
++        entry('robotics', { title: '具身智能', order: 10 }),
++      ]),
++    ).toEqual([
++      { value: 'robotics', label: '具身智能' },
++      { value: 'quant', label: '量化' },
++      { value: '数字信号处理', label: '数字信号处理' },
++    ]);
++  });
++});
+diff --git a/src/lib/services/contents/collection/view/index.js b/src/lib/services/contents/collection/view/index.js
+index bc74518..6e25189 100644
+--- a/src/lib/services/contents/collection/view/index.js
++++ b/src/lib/services/contents/collection/view/index.js
+@@ -12,6 +12,7 @@ import {
+   isNestedCollection,
+   nestedFilterPath,
+ } from '$lib/services/contents/collection/nested';
++import { filterChapterTopics } from '$lib/services/contents/collection/view/chapter-topics';
+ import { usesCurrentTime } from '$lib/services/contents/collection/view/conditions';
+ import { filterEntries, parseFilterConfig } from '$lib/services/contents/collection/view/filter';
+ import {
+@@ -190,7 +191,7 @@ export const listedUnpublishedEntries = createDerivedState(() => {
+     entries = filterEntries(entries, _collection, _currentView.filters, viewTime.current);
+   }
+ 
+-  return entries;
++  return filterChapterTopics(entries, _collection);
+ });
+ 
+ /**
+@@ -287,7 +288,12 @@ export const entryGroups = createDerivedState(() => {
+     entries = filterEntries(entries, collection, _currentView.filters, now);
+   }
+ 
+-  return groupEntries(entries, collection, _currentView.group, now);
++  return groupEntries(
++    filterChapterTopics(entries, collection),
++    collection,
++    _currentView.group,
++    now,
++  );
+ });
+ 
+ /**
 diff --git a/src/lib/services/contents/draft/create/index.js b/src/lib/services/contents/draft/create/index.js
 index 4b43dd2..b6f8ccd 100644
 --- a/src/lib/services/contents/draft/create/index.js
