@@ -1,0 +1,8 @@
+{%- assign topic_source = include.entry | default: page -%}
+{%- assign resolved_topic_key = topic_source.topic_key | default: topic_source.topic | default: '' -%}
+{%- if resolved_topic_key == '' -%}
+  {%- if topic_source.tags contains '具身智能' -%}{%- assign resolved_topic_key = 'robotics' -%}
+  {%- elsif topic_source.tags contains '模型后训练' -%}{%- assign resolved_topic_key = 'post-training' -%}
+  {%- elsif topic_source.tags contains '量化交易' -%}{%- assign resolved_topic_key = 'quant' -%}
+  {%- else -%}{%- assign resolved_topic_key = 'general' -%}{%- endif -%}
+{%- endif -%}

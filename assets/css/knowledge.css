@@ -27,11 +27,8 @@ html.knowledge-page { scroll-padding-top: 0; }
 .directory-search { display: block; color: var(--muted); font-size: 11px; }
 .directory-search input { display: block; width: 100%; margin-top: 6px; padding: 9px 10px; background: var(--wash); border: 1px solid var(--line); border-radius: 8px; color: var(--ink); font: inherit; font-size: 12px; }
 .directory-status { color: var(--muted); font-size: 11px; margin: 8px 0 14px; }
-.directory-topic { margin-block: 10px; }
-.directory-topic > summary, .directory-chapter > summary { cursor: pointer; color: #424952; padding: 7px 4px; overflow-wrap: anywhere; }
-.directory-topic > summary { font-weight: 600; }
+.directory-chapter > summary { cursor: pointer; color: #424952; padding: 7px 4px; overflow-wrap: anywhere; }
 .directory-folder-icon { display: inline-block; width: 12px; height: 9px; border: 1px solid #9aa9b9; border-radius: 2px; margin-right: 6px; background: #edf2f7; }
-.directory-count { color: #89929c; font: 10px var(--mono); margin-left: 8px; }
 .directory-overview, .directory-article { display: block; color: #626c78; padding: 6px 8px 6px 14px; border-radius: 6px; overflow-wrap: anywhere; }
 .directory-overview { font-size: 11px; color: #8b949e; }
 .directory-article::before { content: "▤"; color: #a0aab5; margin-right: 7px; font-size: 11px; }

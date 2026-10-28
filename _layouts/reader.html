@@ -7,25 +7,20 @@ layout: default
       <summary class="reader-panel-heading">学习目录</summary>
       <label class="directory-search">搜索目录<input type="search" placeholder="搜索章节或文章" data-directory-search></label>
       <p class="directory-status" role="status" aria-live="polite" data-directory-status></p>
-      <nav aria-label="栏目、章节与文章" data-directory>
-        {% assign directory_topics = site.topics | sort: 'order' %}
-        {% for directory_topic in directory_topics %}
-        {% assign directory_posts = site.posts | where: 'topic', directory_topic.topic_key %}
-        {% assign directory_legacy = site.posts | where_exp: 'post', 'post.topic == nil' %}
-        {% assign directory_blank = site.posts | where_exp: 'post', "post.topic == ''" %}
-        {% assign directory_legacy = directory_legacy | concat: directory_blank | where_exp: 'post', 'post.tags contains directory_topic.topic_tag' %}
-        {% assign directory_posts = directory_posts | concat: directory_legacy %}
-        <details class="directory-topic" data-directory-topic data-topic-key="{{ directory_topic.topic_key | escape }}" {% if page.topic == directory_topic.topic_key or page.topic_key == directory_topic.topic_key %}open{% endif %}>
-          <summary><span class="directory-folder-icon" aria-hidden="true"></span>{{ directory_topic.title | escape }}<span class="directory-count">{{ directory_posts.size }}</span></summary>
-          <a class="directory-overview" href="{{ directory_topic.url | relative_url }}" {% if page.url == directory_topic.url %}aria-current="page"{% endif %}>栏目概览</a>
+      {% include current-topic.html %}
+      <nav aria-label="{{ current_topic.title | default: '当前栏目' | escape }}章节与文章" data-directory data-topic-key="{{ current_topic_key | escape }}">
+        {% assign directory_count = 0 %}
+          {% if current_topic %}<a class="directory-overview" href="{{ current_topic.url | relative_url }}" {% if page.url == current_topic.url %}aria-current="page"{% endif %}>栏目概览</a>{% endif %}
           <div data-chapter-list>
-            {% for directory_post in directory_posts %}
+            {% for directory_post in site.posts %}
+            {% include topic-key.html entry=directory_post %}
+            {% if resolved_topic_key == current_topic_key %}
+            {% assign directory_count = directory_count | plus: 1 %}
             <a class="directory-article" href="{{ directory_post.url | relative_url }}" data-directory-article data-chapters="{{ directory_post.chapter_path | jsonify | escape }}" data-order="{{ directory_post.chapter_order | default: 50 | escape }}" {% if directory_post.url == page.url %}aria-current="page"{% endif %}>{{ directory_post.title | escape }}</a>
+            {% endif %}
             {% endfor %}
           </div>
-          {% if directory_posts.size == 0 %}<p class="directory-empty">暂无文章</p>{% endif %}
-        </details>
-        {% endfor %}
+          <p class="directory-empty" data-directory-empty {% if directory_count > 0 %}hidden{% endif %}>当前栏目暂无文章</p>
       </nav>
     </details>
   </aside>

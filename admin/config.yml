@@ -68,13 +68,13 @@ collections:
         value_field: "{{slug}}"
         search_fields: [title]
         display_fields: [title]
-        hint: 选择已有栏目，或点击「添加栏目」新建，随文章一起保存。栏目名称和简介会公开；文章仍按自己的阅读权限发布。
+        hint: 选择文章所属栏目，决定顶部导航中的归属；左侧目录只展示这个栏目内的章节和文章。也可点击「添加栏目」新建。
       - label: 章节目录路径
         name: chapter_path
         widget: list
         required: false
         max: 8
-        hint: 按从外到内的顺序添加，例如「第一章 基础」→「1.1 接口」。每一项是一层目录，最多 8 层；留空则直接放在栏目下。
+        hint: 在所选栏目内，按从外到内的顺序添加章节，例如「第一章 基础」→「1.1 接口」。每一项是一层目录，最多 8 层；留空则直接放在该栏目的目录中。
         field:
           label: 章节名称
           name: chapter

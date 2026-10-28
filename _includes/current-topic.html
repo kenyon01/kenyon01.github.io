@@ -1,0 +1,3 @@
+{%- include topic-key.html entry=page -%}
+{%- assign current_topic_key = resolved_topic_key -%}
+{%- assign current_topic = site.topics | where: 'topic_key', current_topic_key | first -%}

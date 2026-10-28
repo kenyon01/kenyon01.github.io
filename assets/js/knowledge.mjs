@@ -70,17 +70,14 @@ function initializeReader() {
   const directory = reader.querySelector('[data-directory]');
   const search = reader.querySelector('[data-directory-search]');
   const status = reader.querySelector('[data-directory-status]');
-  const topics = [...directory.querySelectorAll('[data-directory-topic]')].map(element => {
-    if (element.querySelector('[aria-current="page"]')) element.open = true;
-    const list = element.querySelector('[data-chapter-list]');
-    const records = [...list.querySelectorAll('[data-directory-article]')].map(link => {
-      let path = [];
-      try { path = JSON.parse(link.dataset.chapters); } catch { /* Legacy articles have no path. */ }
-      return { link, title: link.textContent, order: Number(link.dataset.order), path };
-    });
-    return { element, list, records, originalOpen: element.open };
+  const list = directory.querySelector('[data-chapter-list]');
+  const empty = directory.querySelector('[data-directory-empty]');
+  const records = [...list.querySelectorAll('[data-directory-article]')].map(link => {
+    let path = [];
+    try { path = JSON.parse(link.dataset.chapters); } catch { /* Legacy articles have no path. */ }
+    return { link, title: link.textContent, order: Number(link.dataset.order), path };
   });
-  const total = topics.reduce((count, topic) => count + topic.records.length, 0);
+  const total = records.length;
   const matches = (record, query) => `${Array.isArray(record.path) ? record.path.join(' ') : ''} ${record.title}`.toLocaleLowerCase().includes(query);
   let chapterOpenState = new Map();
   let searching = false;
@@ -116,19 +113,13 @@ function initializeReader() {
     const query = search.value.trim().toLocaleLowerCase();
     if (query && !searching) {
       chapterOpenState = new Map([...directory.querySelectorAll('[data-chapter-key]')].map(element => [element.dataset.chapterKey, element.open]));
-      topics.forEach(topic => { topic.originalOpen = topic.element.open; });
     }
-    let shown = 0;
-    topics.forEach(topic => {
-      const records = query ? topic.records.filter(record => matches(record, query)) : topic.records;
-      shown += records.length;
-      topic.element.hidden = !!query && records.length === 0;
-      if (query) topic.element.open = records.length > 0;
-      else if (searching) topic.element.open = topic.originalOpen;
-      topic.list.replaceChildren();
-      renderBranch(buildChapterTree(records), topic.list, topic.element.dataset.topicKey, [], !!query);
-    });
-    status.textContent = query ? `找到 ${shown} / ${total} 篇文章` : `${topics.length} 个栏目 · ${total} 篇文章`;
+    const shown = query ? records.filter(record => matches(record, query)) : records;
+    list.replaceChildren();
+    renderBranch(buildChapterTree(shown), list, directory.dataset.topicKey, [], !!query);
+    status.textContent = query ? `找到 ${shown.length} / ${total} 篇文章` : `共 ${total} 篇文章`;
+    empty.hidden = shown.length > 0;
+    empty.textContent = query ? '当前栏目没有匹配的章节或文章' : '当前栏目暂无文章';
     searching = !!query;
   }
   renderDirectory();

@@ -13,11 +13,11 @@
     <meta property="og:url" content="{{ page.url | absolute_url }}">
     <meta property="og:site_name" content="{{ site.title }}">
     <link rel="icon" href="{{ '/assets/favicon.svg' | relative_url }}" type="image/svg+xml">
-    <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}?v=topics-1">
+    <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}?v=topic-scope-1">
     <script defer src="{{ '/assets/js/main.js' | relative_url }}?v=reader-1"></script>
     {% if page.layout == 'post' or page.layout == 'topic' or page.layout == 'robotics' %}
-    <link rel="stylesheet" href="{{ '/assets/css/knowledge.css' | relative_url }}?v=reader-2">
-    <script type="module" src="{{ '/assets/js/knowledge.mjs' | relative_url }}?v=reader-2"></script>
+    <link rel="stylesheet" href="{{ '/assets/css/knowledge.css' | relative_url }}?v=topic-scope-1">
+    <script type="module" src="{{ '/assets/js/knowledge.mjs' | relative_url }}?v=topic-scope-1"></script>
     {% endif %}
     {% if page.url == '/robotics/' %}
     <link rel="stylesheet" href="{{ '/assets/css/robotics.css' | relative_url }}?v=1">

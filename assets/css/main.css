@@ -135,7 +135,8 @@ img {
   transition: color 0.2s;
 }
 .site-nav a:hover,
-.site-nav a[aria-current="page"] {
+.site-nav a[aria-current="page"],
+.site-nav a[aria-current="true"] {
   color: var(--blue);
 }
 .site-nav .nav-github {
