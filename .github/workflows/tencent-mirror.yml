@@ -1,0 +1,42 @@
+name: Build Tencent mirror
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tencent-mirror-build
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Exclude GitHub-only content in this build checkout
+        run: |
+          python -m pip install PyYAML==6.0.2
+          python -m unittest discover -s deploy -p test_prepare_tencent.py
+          python deploy/prepare_tencent.py --source .
+      - uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+      - name: Verify the mirror excludes the quant section
+        run: |
+          test ! -e _site/quant
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          for path in Path('_site').rglob('*.html'):
+              text = path.read_text(encoding='utf8')
+              assert not re.search(r'href=["\x27](?:https://kenyon01.github.io)?/quant(?:/|["\x27])', text), path
+          assert '/quant/' not in Path('_site/sitemap.xml').read_text(encoding='utf8')
+          PY
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          name: tencent-mirror
+          path: ./_site
