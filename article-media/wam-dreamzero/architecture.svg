@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="630" viewBox="0 0 920 630" role="img" aria-labelledby="title desc">
+<title id="title">DreamZero 联合视频动作预测与真实反馈</title><desc id="desc">视觉历史、语言和本体状态进入联合生成模型，同时预测未来视频与动作，机器人执行后反馈真实观察。</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#526683"/></marker></defs>
+<rect width="920" height="630" rx="20" fill="#f4f7fb"/>
+<g fill="none" stroke="#526683" stroke-width="2.5" marker-end="url(#arrow)">
+<path d="M170 135V170H460V215"/><path d="M460 135V215"/><path d="M750 135V170H460"/>
+<path d="M460 310V355H255V395"/><path d="M460 355H665V395"/>
+<path d="M665 475V535"/><path d="M790 570H870V65H300"/>
+</g>
+<g font-family="Microsoft YaHei,PingFang SC,Noto Sans CJK SC,sans-serif" text-anchor="middle" fill="#172b4d">
+<g fill="#fff" stroke="#c0cde0" stroke-width="1.5"><rect x="40" y="40" width="260" height="95" rx="12"/><rect x="330" y="40" width="260" height="95" rx="12"/><rect x="620" y="40" width="260" height="95" rx="12"/></g>
+<text x="170" y="78" font-size="21">当前图像与视觉历史</text><text x="170" y="111" font-size="17">视频 VAE 编码</text>
+<text x="460" y="78" font-size="21">语言指令</text><text x="460" y="111" font-size="17">文本编码</text>
+<text x="750" y="78" font-size="21">机器人自身状态</text><text x="750" y="111" font-size="17">关节与夹爪等状态编码</text>
+<rect x="245" y="215" width="430" height="95" rx="16" fill="#173b67"/>
+<text x="460" y="254" font-size="23" fill="#fff">联合视频动作生成模型</text><text x="460" y="286" font-size="17" fill="#d8e8ff">带噪视频与动作表示在同一模型中更新</text>
+<rect x="85" y="395" width="340" height="80" rx="12" fill="#e4edf8" stroke="#a9bfdd"/>
+<rect x="495" y="395" width="340" height="80" rx="12" fill="#e2f1ed" stroke="#9cc7bc"/>
+<text x="255" y="443" font-size="22">未来视频潜在表示</text><text x="665" y="443" font-size="22">未来动作序列</text>
+<rect x="540" y="535" width="250" height="70" rx="12" fill="#fff" stroke="#a9bfdd"/>
+<text x="665" y="578" font-size="21">机器人控制器与环境</text>
+<text x="360" y="556" font-size="19">真实观察回到视觉历史</text><text x="360" y="585" font-size="16">依据执行结果更新后续预测</text>
+</g></svg>
