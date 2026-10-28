@@ -476,16 +476,16 @@ index 0000000..32e9a9d
 +});
 diff --git a/src/lib/components/contents/list/chapter-topic-filter.svelte b/src/lib/components/contents/list/chapter-topic-filter.svelte
 new file mode 100644
-index 0000000..9851671
+index 0000000..6a3e456
 --- /dev/null
 +++ b/src/lib/components/contents/list/chapter-topic-filter.svelte
-@@ -0,0 +1,85 @@
+@@ -0,0 +1,89 @@
 +<script>
 +  import { selectedEntries } from '$lib/services/contents/collection/entries';
 +  import { chapterTopicSelection } from '$lib/services/contents/collection/view/chapter-topics';
 +
-+  /** @type {{options: {value: string, label: string}[]}} */
-+  const { options } = $props();
++  /** @type {{options: {value: string, label: string}[], disabled?: boolean}} */
++  const { options, disabled = false } = $props();
 +
 +  /**
 +   * Clear selected rows when the visible set changes so hidden chapters are never counted.
@@ -497,7 +497,7 @@ index 0000000..9851671
 +  };
 +</script>
 +
-+<fieldset class="chapter-topic-filter">
++<fieldset class="chapter-topic-filter" {disabled}>
 +  <legend>按栏目筛选</legend>
 +  <button
 +    type="button"
@@ -520,7 +520,11 @@ index 0000000..9851671
 +      <span>{option.label}</span>
 +    </label>
 +  {/each}
-+  <span class="hint">可多选；未勾选时显示全部</span>
++  <span class="hint"
++    >{disabled
++      ? '同一上级内拖动或上下移动；完成后保存，也可取消'
++      : '可多选；未勾选时显示全部'}</span
++  >
 +</fieldset>
 +
 +<style>
@@ -567,10 +571,10 @@ index 0000000..9851671
 +</style>
 diff --git a/src/lib/components/contents/list/chapter-topic-filter.test.js b/src/lib/components/contents/list/chapter-topic-filter.test.js
 new file mode 100644
-index 0000000..b67057f
+index 0000000..540b890
 --- /dev/null
 +++ b/src/lib/components/contents/list/chapter-topic-filter.test.js
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,72 @@
 +// @vitest-environment happy-dom
 +import { mount, tick, unmount } from 'svelte';
 +import { afterEach, expect, test, vi } from 'vitest';
@@ -628,6 +632,21 @@ index 0000000..b67057f
 +  expect(chapterTopicSelection.current).toEqual([]);
 +  expect(all.getAttribute('aria-pressed')).toBe('true');
 +});
++
++test('locks topic choices while an order is being edited', async () => {
++  chapterTopicSelection.current = ['robotics'];
++  component = mount(ChapterTopicFilter, {
++    target: document.body,
++    props: {
++      disabled: true,
++      options: [{ value: 'robotics', label: '具身智能' }],
++    },
++  });
++  await tick();
++  expect(document.querySelector('fieldset').disabled).toBe(true);
++  expect(document.body.textContent).toContain('同一上级内拖动或上下移动');
++  expect(chapterTopicSelection.current).toEqual(['robotics']);
++});
 diff --git a/src/lib/components/contents/list/entry-list-item-cells.svelte b/src/lib/components/contents/list/entry-list-item-cells.svelte
 index 01635b0..5ec60a2 100644
 --- a/src/lib/components/contents/list/entry-list-item-cells.svelte
@@ -662,8 +681,24 @@ index 01635b0..5ec60a2 100644
    .label {
      :global {
        .icon.home {
+diff --git a/src/lib/components/contents/list/entry-reorder-list.svelte b/src/lib/components/contents/list/entry-reorder-list.svelte
+index b505bf8..6a2e654 100644
+--- a/src/lib/components/contents/list/entry-reorder-list.svelte
++++ b/src/lib/components/contents/list/entry-reorder-list.svelte
+@@ -167,9 +167,9 @@
+ </script>
+ 
+ <div role="none" class="wrapper">
+-  {#each entryGroups.current as { name, entries } (name)}
++  {#each entryGroups.current as { name, entries, label } (name)}
+     {#await sleep() then}
+-      <GridBody label={name !== '*' ? getGroupLabel(name) : undefined}>
++      <GridBody label={label ?? (name !== '*' ? getGroupLabel(name) : undefined)}>
+         {@const localEntries = getLocalEntries(name, entries)}
+         {#each localEntries as entry, index (entry.id)}
+           <!--
 diff --git a/src/lib/components/contents/list/primary-toolbar.svelte b/src/lib/components/contents/list/primary-toolbar.svelte
-index 67b838b..4f2f4cf 100644
+index 67b838b..661e6dd 100644
 --- a/src/lib/components/contents/list/primary-toolbar.svelte
 +++ b/src/lib/components/contents/list/primary-toolbar.svelte
 @@ -12,18 +12,23 @@
@@ -691,12 +726,24 @@ index 67b838b..4f2f4cf 100644
    import { env } from '$lib/services/user/env.svelte';
    import { openAuthoring } from '$lib/services/workflow/open-authoring';
  
-@@ -128,6 +133,9 @@
+@@ -109,7 +114,7 @@
+       {#if canReorder}
+         <Button
+           variant="ghost"
+-          label={_('reorder')}
++          label={name === 'chapters' ? '调整章节顺序' : _('reorder')}
+           aria-label={_('reorder_entries')}
+           disabled={!listedEntries.current.length}
+           onclick={() => {
+@@ -128,6 +133,12 @@
        </FloatingActionButtonWrapper>
      {/if}
    </Toolbar>
-+  {#if name === 'chapters' && !reordering.current}
-+    <ChapterTopicFilter options={getChapterTopicOptions(getEntriesByCollection('topics'))} />
++  {#if name === 'chapters'}
++    <ChapterTopicFilter
++      options={getChapterTopicOptions(getEntriesByCollection('topics'))}
++      disabled={reordering.current}
++    />
 +  {/if}
    {#if isEntryCollection && (creationDisabled || nearingQuota)}
      <Infobar
@@ -1539,6 +1586,194 @@ index 0000000..81d62d8
 +    ]),
 +  ).not.toThrow();
 +});
+diff --git a/src/lib/services/contents/collection/entries/reorder/index.test.js b/src/lib/services/contents/collection/entries/reorder/index.test.js
+index 69c4fca..f9281df 100644
+--- a/src/lib/services/contents/collection/entries/reorder/index.test.js
++++ b/src/lib/services/contents/collection/entries/reorder/index.test.js
+@@ -1,5 +1,7 @@
+ import { beforeEach, describe, expect, test, vi } from 'vitest';
+ 
++import { groupChapterSiblings } from '$lib/services/contents/collection/view/chapter-order';
++
+ import {
+   buildRenumberChanges,
+   renumberCollectionEntries,
+@@ -83,6 +85,35 @@ describe('reorderEntries()', () => {
+     vi.clearAllMocks();
+   });
+ 
++  test('saves a chapter sibling move without changing its topic, parent, body or unselected topics', async () => {
++    const collection = makeCollection({ name: 'chapters', reorder: { key: 'order' } });
++    const chapters = [
++      makeEntry('root', { title: 'Root', topic: 'robotics', order: 10, body: 'Keep root' }),
++      makeEntry('a', { title: 'A', topic: 'robotics', parent: 'root', order: 20, body: 'Keep A' }),
++      makeEntry('b', { title: 'B', topic: 'robotics', parent: 'root', order: 30, body: 'Keep B' }),
++    ];
++    const before = structuredClone(chapters);
++    const groups = groupChapterSiblings(
++      chapters,
++      [makeEntry('robotics', { title: 'Robotics' })],
++      '_default',
++    );
++    groups[1].entries.reverse();
++    await reorderEntries(
++      collection,
++      groups.flatMap((g) => g.entries),
++    );
++    const { saveChanges } = await import('$lib/services/backends/save');
++    const { savingEntries, changes } = vi.mocked(saveChanges).mock.calls[0][0];
++    expect(savingEntries.map((e) => e.slug)).toEqual(['root', 'b', 'a']);
++    savingEntries.forEach((entry, index) => {
++      const original = chapters.find((e) => e.slug === entry.slug).locales._default.content;
++      expect(entry.locales._default.content).toEqual({ ...original, order: index + 1 });
++    });
++    expect(changes.map((c) => c.slug)).toEqual(['root', 'b', 'a']);
++    expect(chapters).toEqual(before);
++  });
++
+   test('returns 0 when collection has no reorder config', async () => {
+     const collection = makeCollection({ reorder: false });
+     const result = await reorderEntries(collection, []);
+diff --git a/src/lib/services/contents/collection/view/chapter-order.js b/src/lib/services/contents/collection/view/chapter-order.js
+new file mode 100644
+index 0000000..9154bbe
+--- /dev/null
++++ b/src/lib/services/contents/collection/view/chapter-order.js
+@@ -0,0 +1,66 @@
++import {
++  getManagedChapterOptions,
++  resolveChapterGraph,
++} from '$lib/services/contents/chapter-graph';
++import { getChapterTopicOptions } from '$lib/services/contents/collection/view/chapter-topics';
++
++/**
++ * Keep chapters in separate sibling groups while reusing the CMS drag and keyboard reorder UI.
++ * @param {import('$lib/types/private').Entry[]} entries Chapters in the selected topics.
++ * @param {import('$lib/types/private').Entry[]} topics Managed topic entries.
++ * @param {string} locale Content locale.
++ * @returns {{name: string, label: string, entries: import('$lib/types/private').Entry[]}[]} Groups.
++ */
++export const groupChapterSiblings = (entries, topics, locale) => {
++  /**
++   * Read the scalar chapter fields used by the hierarchy.
++   * @param {import('$lib/types/private').Entry} entry Chapter entry.
++   * @returns {object} Chapter metadata.
++   */
++  const contentOf = (entry) => entry.locales[locale]?.content ?? {};
++
++  const graph = resolveChapterGraph(
++    Object.fromEntries(entries.map((entry) => [entry.slug, contentOf(entry)])),
++  );
++
++  const groups = new Map();
++
++  entries.forEach((entry) => {
++    const { topic, parent = '' } = contentOf(entry);
++    const key = JSON.stringify([topic, parent || '']);
++
++    if (!groups.has(key)) groups.set(key, []);
++    groups.get(key).push(entry);
++  });
++
++  const options = getChapterTopicOptions(topics);
++  const knownTopics = new Set(options.map((option) => option.value));
++
++  // Keep a chapter visible even if the topic list is temporarily stale.
++  graph.forEach((chapter) => {
++    if (!knownTopics.has(chapter.topic)) {
++      options.push({ value: chapter.topic, label: chapter.topic });
++      knownTopics.add(chapter.topic);
++    }
++  });
++
++  return options.flatMap((topic) => {
++    const parents = [
++      '',
++      ...getManagedChapterOptions({ entries, topic: topic.value, locale }).map(
++        (option) => option.value,
++      ),
++    ];
++
++    return parents.flatMap((parent) => {
++      const name = JSON.stringify([topic.value, parent]);
++      const siblings = groups.get(name);
++
++      if (!siblings?.length) return [];
++
++      const path = parent ? graph.get(parent).path.join(' / ') : '一级章节';
++
++      return [{ name, label: `${topic.label} / ${path}`, entries: siblings }];
++    });
++  });
++};
+diff --git a/src/lib/services/contents/collection/view/chapter-order.test.js b/src/lib/services/contents/collection/view/chapter-order.test.js
+new file mode 100644
+index 0000000..4aa73c2
+--- /dev/null
++++ b/src/lib/services/contents/collection/view/chapter-order.test.js
+@@ -0,0 +1,62 @@
++import { expect, test } from 'vitest';
++
++import { groupChapterSiblings } from './chapter-order';
++
++/**
++ * @param slug
++ * @param content
++ */
++const entry = (slug, content) => ({ slug, locales: { _default: { content } } });
++
++const topics = [
++  entry('robotics', { title: '具身智能', order: 10 }),
++  entry('quant', { title: '量化', order: 30 }),
++];
++
++const chapters = [
++  entry('a', { title: '第一章', topic: 'robotics', order: 10 }),
++  entry('b', { title: '第二章', topic: 'robotics', order: 20 }),
++  entry('a1', { title: '基础', topic: 'robotics', parent: 'a', order: 10 }),
++  entry('a2', { title: '接口', topic: 'robotics', parent: 'a', order: 20 }),
++  entry('deep', { title: '实验', topic: 'robotics', parent: 'a1' }),
++  entry('b1', { title: '基础', topic: 'robotics', parent: 'b' }),
++  entry('q', { title: '第一章', topic: 'quant' }),
++];
++
++test('keeps each topic and parent in a separate reorder group with readable full paths', () => {
++  const groups = groupChapterSiblings(chapters, topics, '_default');
++
++  expect(groups.map((g) => g.entries.map((e) => e.slug))).toEqual([
++    ['a', 'b'],
++    ['a1', 'a2'],
++    ['deep'],
++    ['b1'],
++    ['q'],
++  ]);
++  expect(groups.map((g) => g.label)).toEqual([
++    '具身智能 / 一级章节',
++    '具身智能 / 第一章',
++    '具身智能 / 第一章 / 基础',
++    '具身智能 / 第二章',
++    '量化 / 一级章节',
++  ]);
++  expect(new Set(groups.map((g) => g.name)).size).toBe(groups.length);
++});
++
++test('a selected topic contains all its chapters exactly once without changing source metadata', () => {
++  const selected = chapters.filter((e) => e.locales._default.content.topic === 'robotics');
++  const before = JSON.stringify(chapters);
++  const groups = groupChapterSiblings(selected, topics, '_default');
++
++  groups[0].entries.reverse();
++  expect(groups.flatMap((g) => g.entries.map((e) => e.slug))).toEqual([
++    'b',
++    'a',
++    'a1',
++    'a2',
++    'deep',
++    'b1',
++  ]);
++  expect(JSON.stringify(chapters)).toBe(before);
++  expect(groupChapterSiblings([], topics, '_default')).toEqual([]);
++});
 diff --git a/src/lib/services/contents/collection/view/chapter-topics.js b/src/lib/services/contents/collection/view/chapter-topics.js
 new file mode 100644
 index 0000000..3ae1b31
@@ -1640,18 +1875,19 @@ index 0000000..3649b71
 +  });
 +});
 diff --git a/src/lib/services/contents/collection/view/index.js b/src/lib/services/contents/collection/view/index.js
-index bc74518..6e25189 100644
+index bc74518..97837af 100644
 --- a/src/lib/services/contents/collection/view/index.js
 +++ b/src/lib/services/contents/collection/view/index.js
-@@ -12,6 +12,7 @@ import {
+@@ -12,6 +12,8 @@ import {
    isNestedCollection,
    nestedFilterPath,
  } from '$lib/services/contents/collection/nested';
++import { groupChapterSiblings } from '$lib/services/contents/collection/view/chapter-order';
 +import { filterChapterTopics } from '$lib/services/contents/collection/view/chapter-topics';
  import { usesCurrentTime } from '$lib/services/contents/collection/view/conditions';
  import { filterEntries, parseFilterConfig } from '$lib/services/contents/collection/view/filter';
  import {
-@@ -190,7 +191,7 @@ export const listedUnpublishedEntries = createDerivedState(() => {
+@@ -190,7 +192,7 @@ export const listedUnpublishedEntries = createDerivedState(() => {
      entries = filterEntries(entries, _collection, _currentView.filters, viewTime.current);
    }
  
@@ -1660,11 +1896,28 @@ index bc74518..6e25189 100644
  });
  
  /**
-@@ -287,7 +288,12 @@ export const entryGroups = createDerivedState(() => {
+@@ -264,7 +266,7 @@ export const collectionState = createDerivedState(() => {
+  * `groupEntries()` may return localized labels, and they read the current app locale, so the
+  * groups are also recomputed when the locale changes. They are also recomputed as {@link viewTime}
+  * ticks while a time-based filter or group is applied.
+- * @type {{ readonly current: { name: string, entries: Entry[] }[] }}
++ * @type {{ readonly current: { name: string, label?: string, entries: Entry[] }[] }}
+  */
+ export const entryGroups = createDerivedState(() => {
+   const { current: _currentView } = currentView;
+@@ -287,7 +289,20 @@ export const entryGroups = createDerivedState(() => {
      entries = filterEntries(entries, collection, _currentView.filters, now);
    }
  
 -  return groupEntries(entries, collection, _currentView.group, now);
++  if (collection.name === 'chapters' && reordering.current) {
++    return groupChapterSiblings(
++      filterChapterTopics(entries, collection),
++      getEntriesByCollection('topics'),
++      collection._i18n.defaultLocale,
++    );
++  }
++
 +  return groupEntries(
 +    filterChapterTopics(entries, collection),
 +    collection,
@@ -1716,6 +1969,45 @@ index a2f0418..263c5b1 100644
  /**
   * Fake entry draft state.
   * @type {{ current: any }}
+diff --git a/src/lib/services/contents/draft/save/sort-order.js b/src/lib/services/contents/draft/save/sort-order.js
+index adcb27d..820a96a 100644
+--- a/src/lib/services/contents/draft/save/sort-order.js
++++ b/src/lib/services/contents/draft/save/sort-order.js
+@@ -35,6 +35,14 @@ export const assignManualSortOrder = (draft, offset = 0) => {
+   const nextOrder = maxOrder + offset + 1;
+ 
+   Object.values(currentValues).forEach((valueMap) => {
++    // Chapters also expose a numeric order editor; honor an explicit value when creating one.
++    if (
++      collection.name === 'chapters' &&
++      Number.isInteger(valueMap[orderKey]) &&
++      valueMap[orderKey] >= 1 &&
++      valueMap[orderKey] <= 10000
++    )
++      return;
+     valueMap[orderKey] = nextOrder;
+   });
+ };
+diff --git a/src/lib/services/contents/draft/save/sort-order.test.js b/src/lib/services/contents/draft/save/sort-order.test.js
+index 5c3ae5e..9274398 100644
+--- a/src/lib/services/contents/draft/save/sort-order.test.js
++++ b/src/lib/services/contents/draft/save/sort-order.test.js
+@@ -61,6 +61,15 @@ describe('assignManualSortOrder', () => {
+     expect(draft.currentValues.en.order).toBe(1);
+   });
+ 
++  it('keeps an explicit new chapter order while still assigning one to restored drafts missing it', () => {
++    const draft = createDraft({ en: { order: 3 }, fr: {} });
++
++    draft.collection.name = 'chapters';
++    assignManualSortOrder(draft);
++    expect(draft.currentValues.en.order).toBe(3);
++    expect(draft.currentValues.fr.order).toBe(1);
++  });
++
+   it('skips the orders already taken by the given number of entries', () => {
+     vi.mocked(getEntriesByCollection).mockReturnValue(
+       /** @type {any} */ ([{ locales: { en: { content: { order: 5 } } } }]),
 diff --git a/src/lib/services/contents/entry/publication.js b/src/lib/services/contents/entry/publication.js
 new file mode 100644
 index 0000000..8200163

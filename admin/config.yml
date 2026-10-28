@@ -188,6 +188,7 @@ collections:
     folder: /_chapters
     create: true
     delete: false
+    reorder: {key: order}
     extension: md
     format: frontmatter
     slug: "{{slug}}"
