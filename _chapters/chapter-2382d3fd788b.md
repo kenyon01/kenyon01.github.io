@@ -3,7 +3,7 @@ chapter_key: chapter-2382d3fd788b
 title: 1.1 接口与动作语义
 topic: robotics
 parent: chapter-bb7f2564c49d
-order: 10
+order: 6
 ancestors:
 - chapter-bb7f2564c49d
 - chapter-2382d3fd788b
