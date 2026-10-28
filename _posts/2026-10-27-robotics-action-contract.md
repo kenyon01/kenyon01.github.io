@@ -1,16 +1,20 @@
 ---
-chapter_path:
-- 第一章 · 动作与控制
-- 1.1 接口与动作语义
 chapter_order: 10
 topic: robotics
 layout: post
-title: "先让模型和机器人说同一种语言"
-description: "从 π0.5 与 ARX X5 的接口对齐中，理解动作语义、夹爪命令和实测状态为什么不能混用。"
-tags: [具身智能, 感知与接口, 策略与控制]
+title: 先让模型和机器人说同一种语言
+description: 从 π0.5 与 ARX X5 的接口对齐中，理解动作语义、夹爪命令和实测状态为什么不能混用。
+tags:
+- 具身智能
+- 感知与接口
+- 策略与控制
 reading_time: 4
 published: true
 visibility: public
+chapter: chapter-2382d3fd788b
+chapter_path:
+- 第一章 · 动作与控制
+- 1.1 接口与动作语义
 ---
 
 > 本文整理于 2026 年 10 月 27 日，依据 2026 年 9 月 18 日的项目诊断记录。它描述当时的局部验证，不代表当前完整系统或真实机器人已通过验收。

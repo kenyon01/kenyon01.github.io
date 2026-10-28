@@ -9,6 +9,11 @@ layout: default
       <p class="directory-status" role="status" aria-live="polite" data-directory-status></p>
       {% include current-topic.html %}
       <nav aria-label="{{ current_topic.title | default: '当前栏目' | escape }}章节与文章" data-directory data-topic-key="{{ current_topic_key | escape }}">
+        {% for directory_chapter in site.chapters %}
+        {% if directory_chapter.topic == current_topic_key %}
+        <span hidden data-chapter-definition data-path="{{ directory_chapter.chapter_path | jsonify | escape }}" data-order="{{ directory_chapter.order | escape }}"></span>
+        {% endif %}
+        {% endfor %}
         {% assign directory_count = 0 %}
           {% if current_topic %}<a class="directory-overview" href="{{ current_topic.url | relative_url }}" {% if page.url == current_topic.url %}aria-current="page"{% endif %}>栏目概览</a>{% endif %}
           <div data-chapter-list>

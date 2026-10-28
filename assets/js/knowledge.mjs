@@ -26,8 +26,22 @@ export function sortedDirectoryRows(node) {
 }
 
 /** Build a chapter tree without treating user-provided labels as object properties. */
-export function buildChapterTree(records) {
+export function buildChapterTree(records, definitions = []) {
   const root = { chapters: new Map(), articles: [], order: Infinity };
+  const addPath = labels => {
+    let node = root;
+    labels.forEach(label => {
+      if (!node.chapters.has(label)) node.chapters.set(label, { label, chapters: new Map(), articles: [], order: Infinity });
+      node = node.chapters.get(label);
+    });
+    return node;
+  };
+  definitions.forEach(definition => {
+    if (!Array.isArray(definition.path) || !definition.path.length || definition.path.length > 8 || !definition.path.every(label => typeof label === 'string' && label.trim())) return;
+    const node = addPath(definition.path.map(label => label.trim()));
+    node.order = Number.isFinite(Number(definition.order)) ? Number(definition.order) : 50;
+    node.managed = true;
+  });
   records.forEach(record => {
     const order = Number.isFinite(Number(record.order)) ? Number(record.order) : 50;
     const labels = Array.isArray(record.path)
@@ -38,7 +52,7 @@ export function buildChapterTree(records) {
     labels.forEach(label => {
       if (!node.chapters.has(label)) node.chapters.set(label, { label, chapters: new Map(), articles: [], order: Infinity });
       node = node.chapters.get(label);
-      node.order = Math.min(node.order, order);
+      if (!node.managed) node.order = Math.min(node.order, order);
     });
     node.articles.push({ ...record, order });
   });
@@ -77,6 +91,10 @@ function initializeReader() {
     try { path = JSON.parse(link.dataset.chapters); } catch { /* Legacy articles have no path. */ }
     return { link, title: link.textContent, order: Number(link.dataset.order), path };
   });
+  const definitions = [...directory.querySelectorAll('[data-chapter-definition]')].flatMap(element => {
+    try { return [{ path: JSON.parse(element.dataset.path), order: Number(element.dataset.order) }]; }
+    catch { return []; }
+  });
   const total = records.length;
   const matches = (record, query) => `${Array.isArray(record.path) ? record.path.join(' ') : ''} ${record.title}`.toLocaleLowerCase().includes(query);
   let chapterOpenState = new Map();
@@ -103,6 +121,12 @@ function initializeReader() {
       const children = document.createElement('div');
       children.className = 'directory-children';
       renderBranch(chapter, children, topicKey, nextPath, searchingNow);
+      if (!children.childElementCount) {
+        const message = document.createElement('p');
+        message.className = 'directory-empty';
+        message.textContent = '暂无文章';
+        children.append(message);
+      }
       details.append(summary, children);
       details.open = searchingNow || chapterOpenState.get(key) === true || (chapterOpenState.get(key) === undefined && (path.length === 0 || !!children.querySelector('[aria-current="page"]')));
       parent.append(details);
@@ -116,9 +140,18 @@ function initializeReader() {
     }
     const shown = query ? records.filter(record => matches(record, query)) : records;
     list.replaceChildren();
-    renderBranch(buildChapterTree(shown), list, directory.dataset.topicKey, [], !!query);
+    const tree = buildChapterTree(shown, definitions);
+    const prune = (node, path = []) => {
+      node.chapters.forEach((chapter, key) => {
+        const nextPath = [...path, chapter.label];
+        prune(chapter, nextPath);
+        if (!chapter.articles.length && !chapter.chapters.size && !nextPath.join(' ').toLocaleLowerCase().includes(query)) node.chapters.delete(key);
+      });
+    };
+    if (query) prune(tree);
+    renderBranch(tree, list, directory.dataset.topicKey, [], !!query);
     status.textContent = query ? `找到 ${shown.length} / ${total} 篇文章` : `共 ${total} 篇文章`;
-    empty.hidden = shown.length > 0;
+    empty.hidden = shown.length > 0 || tree.chapters.size > 0;
     empty.textContent = query ? '当前栏目没有匹配的章节或文章' : '当前栏目暂无文章';
     searching = !!query;
   }

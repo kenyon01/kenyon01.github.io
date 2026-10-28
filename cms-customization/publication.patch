@@ -1,3 +1,72 @@
+diff --git a/src/lib/components/contents/details/fields/relation/relation-editor.svelte b/src/lib/components/contents/details/fields/relation/relation-editor.svelte
+index 38555d0..5ca0839 100644
+--- a/src/lib/components/contents/details/fields/relation/relation-editor.svelte
++++ b/src/lib/components/contents/details/fields/relation/relation-editor.svelte
+@@ -11,6 +11,7 @@
+ 
+   import QuickAddDialog from '$lib/components/contents/details/fields/relation/quick-add-dialog.svelte';
+   import SelectEditor from '$lib/components/contents/details/fields/select/select-editor.svelte';
++  import { getManagedChapterOptions } from '$lib/services/contents/chapter-graph';
+   import { getCollectionLabel } from '$lib/services/contents/collection';
+   import { getEntryDraftContext } from '$lib/services/contents/draft/state.svelte';
+   import { getOptions, getRefEntries } from '$lib/services/contents/fields/relation/helpers';
+@@ -76,15 +77,38 @@
+   const selectFieldConfig = $derived({
+     ...fieldConfig,
+     widget: 'select',
+-    options: getOptions({
+-      locale,
+-      fieldConfig,
+-      refEntries,
+-      currentLocaleValues,
+-      currentSlug,
+-      // A label can refer to another pending entry through a Relation field of the entry
+-      pendingEntries: entryDraft.current?.pendingEntries,
+-    }),
++    options:
++      fieldConfig.collection === 'chapters'
++        ? getManagedChapterOptions({
++            entries: refEntries,
++            topic: currentLocaleValues?.topic,
++            excludeAncestor: fieldConfig.name === 'parent' ? currentSlug : undefined,
++            locale,
++          })
++        : getOptions({
++            locale,
++            fieldConfig,
++            refEntries,
++            currentLocaleValues,
++            currentSlug,
++            // A label can refer to another pending entry through a Relation field of the entry
++            pendingEntries: entryDraft.current?.pendingEntries,
++          }),
++  });
++  let lastChapterTopic = $state();
++  $effect(() => {
++    if (readonly || fieldConfig.collection !== 'chapters') return;
++
++    const topic = currentLocaleValues?.topic;
++
++    if (topic === lastChapterTopic) return;
++    // A whole-draft undo restores topic and chapter together; keep that valid reference.
++    if (
++      lastChapterTopic !== undefined &&
++      !selectFieldConfig.options.some((option) => option.value === currentValue)
++    )
++      currentValue = undefined;
++    lastChapterTopic = topic;
+   });
+   const creatableCollection = $derived(
+     readonly || !entryDraft.current
+@@ -118,7 +142,7 @@
+     {readonly}
+     {required}
+     {invalid}
+-    sortOptions={true}
++    sortOptions={fieldConfig.collection !== 'chapters'}
+   />
+   {#if creatableCollection}
+     <div role="none" class="actions">
 diff --git a/src/lib/components/contents/details/fields/string/server-video.svelte b/src/lib/components/contents/details/fields/string/server-video.svelte
 new file mode 100644
 index 0000000..f315375
@@ -744,10 +813,10 @@ index 0000000..59a83fc
 +  });
 +});
 diff --git a/src/lib/services/backends/git/github/commits.js b/src/lib/services/backends/git/github/commits.js
-index ca8755b..c223f8d 100644
+index ca8755b..e7987b2 100644
 --- a/src/lib/services/backends/git/github/commits.js
 +++ b/src/lib/services/backends/git/github/commits.js
-@@ -1,6 +1,7 @@
+@@ -1,11 +1,13 @@
  import { _ } from '@sveltia/i18n';
  import { encodeBase64 } from '@sveltia/utils/file';
  
@@ -755,11 +824,18 @@ index ca8755b..c223f8d 100644
  import { getWorkflowRepository } from '$lib/services/backends/git/github/fork';
  import { repository } from '$lib/services/backends/git/github/repository';
  import { fetchGraphQL } from '$lib/services/backends/git/shared/api';
-@@ -111,6 +112,8 @@ const getExpectedHeadOid = async ({ headOid, branch }) => {
+ import { createCommitMessage } from '$lib/services/backends/git/shared/commits';
+ import { repositoryHead } from '$lib/services/backends/git/shared/fetch';
++import { assertChapterChanges } from '$lib/services/contents/chapter-policy';
+ import { openAuthoring } from '$lib/services/workflow/open-authoring';
+ 
+ /**
+@@ -111,6 +113,9 @@ const getExpectedHeadOid = async ({ headOid, branch }) => {
   * @see https://docs.github.com/en/graphql/reference/mutations#createcommitonbranch
   */
  export const commitChanges = async (changes, options) => {
 +  assertRepositoryMedia(changes);
++  assertChapterChanges(changes);
 +
    // An Open Authoring contributor can’t write to the configured repository at all, so a change that
    // doesn’t go through Editorial Workflow has nowhere to land. Fail here with an explanation rather
@@ -888,6 +964,388 @@ index 940a20e..6f72de7 100644
      });
  
      test('includes OID query for files at exactly 10 MB', async () => {
+diff --git a/src/lib/services/contents/chapter-graph.js b/src/lib/services/contents/chapter-graph.js
+new file mode 100644
+index 0000000..5b81e3c
+--- /dev/null
++++ b/src/lib/services/contents/chapter-graph.js
+@@ -0,0 +1,123 @@
++/**
++ * Validate chapter references and derive complete paths from stable chapter IDs.
++ * @param {Record<string, object>} definitions Stored chapter metadata keyed by stable ID.
++ * @param {Set<string>} [topics] Allowed topic IDs, when validating a save.
++ * @returns {Map<string, object>} Chapters with resolved paths and ancestor IDs.
++ */
++export function resolveChapterGraph(definitions, topics) {
++  const graph = new Map();
++  const siblings = new Set();
++
++  Object.entries(definitions).forEach(([id, raw]) => {
++    const title = typeof raw.title === 'string' ? raw.title.trim() : '';
++    const parent = raw.parent || '';
++    const order = raw.order ?? 50;
++
++    if (
++      typeof title !== 'string' ||
++      !title ||
++      title.length > 80 ||
++      typeof raw.topic !== 'string' ||
++      (topics && !topics.has(raw.topic)) ||
++      typeof parent !== 'string' ||
++      !Number.isInteger(order) ||
++      order < 1 ||
++      order > 10000
++    ) {
++      throw new Error('请填写有效的章节名称、所属栏目和顺序。');
++    }
++
++    const identity = JSON.stringify([raw.topic, parent, title]);
++
++    if (siblings.has(identity)) throw new Error('同一栏目、同一上级下已有同名章节，请修改名称。');
++    siblings.add(identity);
++    graph.set(id, { id, title, topic: raw.topic, parent, order });
++  });
++
++  /**
++   * Resolve one chapter after its parent.
++   * @param {string} id Chapter ID.
++   * @param {string[]} [trail] IDs currently being resolved.
++   * @returns {object} Resolved chapter.
++   * @throws {Error} When the hierarchy is cyclic, too deep or crosses topics.
++   */
++  const visit = (id, trail = []) => {
++    if (trail.includes(id))
++      throw new Error('章节不能作为自己或下级章节的上级，请重新选择上级章节。');
++
++    const chapter = graph.get(id);
++
++    if (chapter.path) return chapter;
++
++    let parent;
++
++    if (chapter.parent) {
++      if (!graph.has(chapter.parent)) throw new Error('上级章节不存在，请重新选择。');
++      parent = graph.get(chapter.parent);
++      if (parent.topic !== chapter.topic) throw new Error('上级章节必须属于同一个栏目。');
++      parent = visit(chapter.parent, [...trail, id]);
++    }
++
++    chapter.path = [...(parent?.path || []), chapter.title];
++    chapter.ancestors = [...(parent?.ancestors || []), id];
++    chapter.orderPath = [...(parent?.orderPath || []), chapter.order];
++    if (chapter.path.length > 8) throw new Error('章节层级最多支持 8 层。');
++    return chapter;
++  };
++
++  graph.forEach((chapter) => visit(chapter.id));
++  return graph;
++}
++
++/**
++ * Build readable choices in tree order for the selected topic.
++ * @param {object} options Picker inputs.
++ * @param {import('$lib/types/private').Entry[]} options.entries Saved and pending chapter entries.
++ * @param {string} options.topic Selected topic ID.
++ * @param {string} [options.excludeAncestor] Chapter being edited, excluded with its descendants.
++ * @param {string} options.locale Current content locale.
++ * @returns {object[]} Select options with full hierarchy labels.
++ */
++export function getManagedChapterOptions({ entries, topic, excludeAncestor, locale }) {
++  if (!topic) return [];
++
++  const definitions = Object.fromEntries(
++    entries.map((entry) => [
++      entry.slug,
++      entry.locales[locale]?.content || entry.locales._default?.content || {},
++    ]),
++  );
++
++  let graph;
++
++  try {
++    graph = resolveChapterGraph(definitions);
++  } catch {
++    return [];
++  }
++
++  return [...graph.values()]
++    .filter(
++      (chapter) =>
++        chapter.topic === topic &&
++        (!excludeAncestor || !chapter.ancestors.includes(excludeAncestor)),
++    )
++    .sort((a, b) => {
++      const length = Math.min(a.path.length, b.path.length);
++
++      for (let i = 0; i < length; i += 1) {
++        const difference =
++          a.orderPath[i] - b.orderPath[i] ||
++          a.path[i].localeCompare(b.path[i], 'zh-CN', { numeric: true });
++
++        if (difference) return difference;
++      }
++
++      return a.path.length - b.path.length;
++    })
++    .map((chapter) => ({
++      value: chapter.id,
++      label: chapter.path.join(' / '),
++      searchValue: chapter.path.join(' '),
++    }));
++}
+diff --git a/src/lib/services/contents/chapter-graph.test.js b/src/lib/services/contents/chapter-graph.test.js
+new file mode 100644
+index 0000000..3f70f35
+--- /dev/null
++++ b/src/lib/services/contents/chapter-graph.test.js
+@@ -0,0 +1,95 @@
++import { describe, expect, it } from 'vitest';
++
++import { getManagedChapterOptions, resolveChapterGraph } from './chapter-graph';
++
++/**
++ *
++ */
++const definitions = () => ({
++  a: { title: '第一章', topic: 'robotics', order: 10 },
++  b: { title: '接口', topic: 'robotics', parent: 'a', order: 20 },
++  c: { title: '第二章', topic: 'quant', order: 5 },
++});
++
++/**
++ * @param data
++ */
++const entries = (data) =>
++  Object.entries(data).map(([slug, content]) => ({ slug, locales: { _default: { content } } }));
++
++describe('managed chapter choices', () => {
++  it('shows complete paths only within the selected topic', () => {
++    expect(
++      getManagedChapterOptions({
++        entries: entries(definitions()),
++        topic: 'robotics',
++        locale: '_default',
++      }).map((o) => [o.value, o.label]),
++    ).toEqual([
++      ['a', '第一章'],
++      ['b', '第一章 / 接口'],
++    ]);
++    expect(
++      getManagedChapterOptions({
++        entries: entries(definitions()),
++        topic: undefined,
++        locale: '_default',
++      }),
++    ).toEqual([]);
++  });
++  it('excludes current chapter and all descendants from parent choices', () => {
++    expect(
++      getManagedChapterOptions({
++        entries: entries(definitions()),
++        topic: 'robotics',
++        excludeAncestor: 'a',
++        locale: '_default',
++      }),
++    ).toEqual([]);
++    expect(
++      getManagedChapterOptions({
++        entries: entries(definitions()),
++        topic: 'robotics',
++        excludeAncestor: 'b',
++        locale: '_default',
++      }).map((o) => o.value),
++    ).toEqual(['a']);
++  });
++  it('renaming and reparenting preserve IDs while labels follow the hierarchy', () => {
++    const data = definitions();
++
++    data.a.title = '基础';
++    expect(resolveChapterGraph(data).get('b').path).toEqual(['基础', '接口']);
++    data.b.parent = '';
++    expect(resolveChapterGraph(data).get('b').path).toEqual(['接口']);
++  });
++  it('rejects cycles, wrong topic, missing parents, duplicate siblings and over-depth trees', () => {
++    const cycle = definitions();
++
++    cycle.a.parent = 'b';
++
++    const cross = definitions();
++
++    cross.b.parent = 'c';
++
++    const missing = definitions();
++
++    missing.b.parent = 'missing';
++
++    const duplicates = definitions();
++
++    duplicates.d = { ...duplicates.b };
++
++    const deep = Object.fromEntries(
++      Array.from({ length: 9 }, (_, i) => [
++        String(i),
++        { title: String(i), topic: 'robotics', parent: i ? String(i - 1) : '' },
++      ]),
++    );
++
++    [cycle, cross, missing, duplicates, deep].forEach((data) =>
++      expect(() => resolveChapterGraph(data)).toThrow(),
++    );
++    expect(() => resolveChapterGraph(definitions(), new Set(['quant']))).toThrow();
++  });
++});
+diff --git a/src/lib/services/contents/chapter-policy.js b/src/lib/services/contents/chapter-policy.js
+new file mode 100644
+index 0000000..496f772
+--- /dev/null
++++ b/src/lib/services/contents/chapter-policy.js
+@@ -0,0 +1,65 @@
++import { parse } from 'yaml';
++
++import { resolveChapterGraph } from '$lib/services/contents/chapter-graph';
++import { getEntriesByCollection } from '$lib/services/contents/collection/entries';
++
++/**
++ * Validate the resulting hierarchy and article references before committing changes.
++ * @param {object[]} changes Proposed Git file changes.
++ */
++export function assertChapterChanges(changes) {
++  const relevant = changes.filter((change) =>
++    /^\/?_(chapters|posts|topics)\/[^/]+\.md$/.test(change.path),
++  );
++
++  if (!relevant.length) return;
++
++  const state = Object.fromEntries(
++    ['chapters', 'posts', 'topics'].map((name) => [
++      name,
++      new Map(
++        getEntriesByCollection(name).map((entry) => [
++          entry.slug,
++          entry.locales._default?.content || {},
++        ]),
++      ),
++    ]),
++  );
++
++  relevant.forEach((change) => {
++    const previous = change.previousPath?.match(/^\/?_(chapters|posts|topics)\/([^/]+)\.md$/);
++
++    if (previous) state[previous[1]].delete(previous[2]);
++
++    const [, collection, id] = change.path.match(/^\/?_(chapters|posts|topics)\/([^/]+)\.md$/);
++
++    if (change.action === 'delete') {
++      state[collection].delete(id);
++      return;
++    }
++
++    if (typeof change.data !== 'string') throw new Error('栏目、章节和文章必须保存为文本。');
++
++    const parts = change.data.split(/^---\s*$/m);
++    const metadata = parts.length >= 3 ? parse(parts[1]) : undefined;
++
++    if (!metadata || typeof metadata !== 'object')
++      throw new Error('无法读取章节设置，请重新打开编辑器。');
++    state[collection].set(id, metadata);
++  });
++
++  const graph = resolveChapterGraph(
++    Object.fromEntries(state.chapters),
++    new Set(state.topics.keys()),
++  );
++
++  state.posts.forEach((post) => {
++    if (!post.chapter) return;
++
++    const chapter = graph.get(post.chapter);
++
++    if (!chapter) throw new Error('文章所属章节不存在，请重新选择章节。');
++    if (chapter.topic !== post.topic)
++      throw new Error('文章所属章节与栏目不一致，请选择当前栏目下的章节。');
++  });
++}
+diff --git a/src/lib/services/contents/chapter-policy.test.js b/src/lib/services/contents/chapter-policy.test.js
+new file mode 100644
+index 0000000..81d62d8
+--- /dev/null
++++ b/src/lib/services/contents/chapter-policy.test.js
+@@ -0,0 +1,75 @@
++import { beforeEach, expect, it, vi } from 'vitest';
++
++import { getEntriesByCollection } from '$lib/services/contents/collection/entries';
++
++import { assertChapterChanges } from './chapter-policy';
++
++vi.mock('$lib/services/contents/collection/entries', () => ({ getEntriesByCollection: vi.fn() }));
++
++let state;
++/**
++ * @param slug
++ * @param content
++ */
++const entry = (slug, content) => ({ slug, locales: { _default: { content } } });
++/**
++ * @param path
++ * @param yaml
++ */
++const change = (path, yaml) => ({ action: 'update', path, data: `---\n${yaml}\n---\nbody` });
++
++beforeEach(() => {
++  state = {
++    topics: [entry('robotics', {}), entry('quant', {})],
++    chapters: [
++      entry('a', { title: '基础', topic: 'robotics' }),
++      entry('b', { title: '接口', topic: 'robotics', parent: 'a' }),
++    ],
++    posts: [entry('post', { topic: 'robotics', chapter: 'b' })],
++  };
++  vi.mocked(getEntriesByCollection).mockImplementation((name) => state[name]);
++});
++it('allows posts to choose valid chapters or no chapter', () => {
++  expect(() =>
++    assertChapterChanges([change('_posts/post.md', 'topic: robotics\nchapter: b')]),
++  ).not.toThrow();
++  expect(() => assertChapterChanges([change('_posts/post.md', 'topic: quant')])).not.toThrow();
++});
++it('blocks stale cross-topic selections and unknown references before commit', () => {
++  expect(() =>
++    assertChapterChanges([change('_posts/post.md', 'topic: quant\nchapter: b')]),
++  ).toThrow('栏目不一致');
++  expect(() =>
++    assertChapterChanges([change('_posts/post.md', 'topic: robotics\nchapter: gone')]),
++  ).toThrow('不存在');
++});
++it('validates chapter edits against existing article references and parent cycles', () => {
++  expect(() =>
++    assertChapterChanges([change('_chapters/b.md', 'title: 接口\ntopic: quant')]),
++  ).toThrow('栏目不一致');
++  expect(() =>
++    assertChapterChanges([change('_chapters/a.md', 'title: 基础\ntopic: robotics\nparent: b')]),
++  ).toThrow('上级');
++});
++it('supports creating topic, nested chapters and article in a single native quick-add commit', () => {
++  expect(() =>
++    assertChapterChanges([
++      change('_topics/dsp.md', 'title: DSP'),
++      change('_chapters/new.md', 'title: 第一章\ntopic: dsp'),
++      change('_chapters/child.md', 'title: 概念\ntopic: dsp\nparent: new'),
++      change('_posts/new.md', 'topic: dsp\nchapter: child'),
++    ]),
++  ).not.toThrow();
++});
++it('supports moving a chapter file atomically with its references', () => {
++  expect(() =>
++    assertChapterChanges([
++      {
++        ...change('_chapters/renamed.md', 'title: 基础\ntopic: robotics'),
++        action: 'move',
++        previousPath: '_chapters/a.md',
++      },
++      change('_chapters/b.md', 'title: 接口\ntopic: robotics\nparent: renamed'),
++    ]),
++  ).not.toThrow();
++});
 diff --git a/src/lib/services/contents/draft/create/index.js b/src/lib/services/contents/draft/create/index.js
 index 4b43dd2..b6f8ccd 100644
 --- a/src/lib/services/contents/draft/create/index.js

@@ -69,25 +69,26 @@ collections:
         search_fields: [title]
         display_fields: [title]
         hint: 选择文章所属栏目，决定顶部导航中的归属；左侧目录只展示这个栏目内的章节和文章。也可点击「添加栏目」新建。
-      - label: 章节目录路径
-        name: chapter_path
-        widget: list
+      - label: 所属章节
+        name: chapter
+        widget: relation
         required: false
-        max: 8
-        hint: 在所选栏目内，按从外到内的顺序添加章节，例如「第一章 基础」→「1.1 接口」。每一项是一层目录，最多 8 层；留空则直接放在该栏目的目录中。
-        field:
-          label: 章节名称
-          name: chapter
-          widget: string
-          maxlength: 80
-      - label: 目录排序
+        collection: chapters
+        value_field: "{{slug}}"
+        display_fields: [title]
+        search_fields: [title]
+        filters:
+          - field: topic
+            values: ['{{fields.topic}}']
+        hint: 先选择栏目，再选择已创建的章节。选项显示完整层级；留空则直接放在栏目目录下。章节可在左侧「章节管理」单独创建。
+      - label: 文章顺序
         name: chapter_order
         widget: number
         value_type: int
         default: 50
         min: 1
         max: 10000
-        hint: 数字越小越靠前。同一章节内按此顺序显示文章，章节按其中最靠前的文章排序。
+        hint: 同一章节内数字越小越靠前。章节之间的顺序请在「章节管理」设置。
       - label: 发布日期
         name: date
         widget: datetime
@@ -180,3 +181,55 @@ collections:
         widget: boolean
         default: true
         hint: 关闭后仍可在文章中选择该栏目，栏目页面也仍可访问。
+  - name: chapters
+    label: 章节管理
+    label_singular: 章节
+    description: 先选栏目，再填写章节名称和上级章节。留空上级章节表示第一层。名称和层级会公开显示在该栏目的目录中；修改章节会自动更新文章的目录位置。
+    folder: /_chapters
+    create: true
+    delete: false
+    extension: md
+    format: frontmatter
+    slug: "{{slug}}"
+    summary: "{{topic}} · {{title}}"
+    sortable_fields:
+      fields: [order, title]
+      default:
+        field: order
+        direction: ascending
+    fields:
+      - label: 所属栏目
+        name: topic
+        widget: relation
+        collection: topics
+        value_field: "{{slug}}"
+        display_fields: [title]
+        search_fields: [title]
+      - label: 章节名称
+        name: title
+        widget: string
+        maxlength: 80
+        hint: 例如：第一章 基础知识、1.1 接口。相同上级下的名称不能重复。
+      - label: 上级章节
+        name: parent
+        widget: relation
+        required: false
+        collection: chapters
+        value_field: "{{slug}}"
+        display_fields: [title]
+        search_fields: [title]
+        filters:
+          - field: topic
+            values: ['{{fields.topic}}']
+          - field: slug
+            values: ['{{slug}}']
+            exclude: true
+        hint: 留空表示本栏目第一层。可选同一栏目内的已有章节，最多支持 8 层。
+      - label: 章节顺序
+        name: order
+        widget: number
+        value_type: int
+        default: 50
+        min: 1
+        max: 10000
+        hint: 同一层内数字越小越靠前。

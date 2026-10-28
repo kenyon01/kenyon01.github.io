@@ -1,16 +1,20 @@
 ---
-chapter_path:
-- 第一章 · 动作与控制
-- 1.2 轨迹与执行
 chapter_order: 20
 topic: robotics
 layout: post
-title: "目标在移动，机械臂为什么跟不上？"
-description: "同一段轨迹的离线对照，帮助我们区分目标限幅滞后、实际关节误差和任务失败。"
-tags: [具身智能, 策略与控制, 实验方法]
+title: 目标在移动，机械臂为什么跟不上？
+description: 同一段轨迹的离线对照，帮助我们区分目标限幅滞后、实际关节误差和任务失败。
+tags:
+- 具身智能
+- 策略与控制
+- 实验方法
 reading_time: 4
 published: true
 visibility: public
+chapter: chapter-2b04ef0575e7
+chapter_path:
+- 第一章 · 动作与控制
+- 1.2 轨迹与执行
 ---
 
 > 本文依据 2026 年 9 月 18 日的仿真诊断记录整理。文中的参数是当时场景的实验条件，不是实机调参建议。

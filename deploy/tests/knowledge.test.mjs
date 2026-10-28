@@ -44,3 +44,17 @@ test('Chinese chapter numbers sort naturally while explicit order takes priority
   const ordered = buildChapterTree([{ title: 'A', path: ['第二章'], order: 1 }, { title: 'B', path: ['第一章'], order: 5 }]);
   assert.equal(sortedDirectoryRows(ordered)[0].title, '第二章');
 });
+
+test('independent empty chapters retain their order when articles are added', () => {
+  const tree = buildChapterTree([
+    { title: 'Early article', path: ['Later', 'Child'], order: 1 },
+  ], [
+    { path: ['Later', 'Child'], order: 30 },
+    { path: ['Empty'], order: 10 },
+    { path: ['Later'], order: 20 },
+  ]);
+  assert.deepEqual(sortedDirectoryRows(tree).map(row => row.title), ['Empty', 'Later']);
+  assert.equal(tree.chapters.get('Later').order, 20);
+  assert.equal(tree.chapters.get('Later').chapters.get('Child').order, 30);
+  assert.equal(tree.chapters.get('Empty').articles.length, 0);
+});

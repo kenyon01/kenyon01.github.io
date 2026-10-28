@@ -1,15 +1,19 @@
 ---
-chapter_path:
-- 第二章 · 仿真与接触
 chapter_order: 30
 topic: robotics
 layout: post
-title: "瓶子掉落之后：先检查物理语义"
-description: "一个 22 kg 与 0.5 kg 的差异，如何改变我们对抓取失败的判断；以及为什么修复后仍不能宣布全流程成功。"
-tags: [具身智能, 仿真与接触, 实验方法]
+title: 瓶子掉落之后：先检查物理语义
+description: 一个 22 kg 与 0.5 kg 的差异，如何改变我们对抓取失败的判断；以及为什么修复后仍不能宣布全流程成功。
+tags:
+- 具身智能
+- 仿真与接触
+- 实验方法
 reading_time: 5
 published: true
 visibility: public
+chapter: chapter-79b1d5cfe41b
+chapter_path:
+- 第二章 · 仿真与接触
 ---
 
 > 本文整理自 2026 年 9 月 18 日的抓取诊断记录。下面是保存动作的局部回放结果，不是新开展的实验，也不代表完整任务成功率。
