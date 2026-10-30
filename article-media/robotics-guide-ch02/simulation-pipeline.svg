@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1260" height="660" viewBox="0 0 1260 660" role="img" aria-labelledby="title desc">
+  <title id="title">模型、运行状态与显示的关系</title>
+  <desc id="desc">MJCF经过加载编译成为MjModel，与MjData一起进行物理计算。物理更新产生新状态，日志和查看器读取结果。单独改变相机不会推进物理时间。</desc>
+  <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#247d85"/></marker></defs>
+  <rect width="1260" height="660" rx="24" fill="#f4f7fb"/>
+  <g font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" fill="#19334b">
+    <text x="38" y="55" font-size="28" font-weight="700">图 2-1　先计算物理，再读取与显示结果</text>
+    <text x="38" y="91" font-size="20" fill="#5b6d7e">有窗口和无窗口可以使用同一份模型；渲染是额外的一条路径。</text>
+    <g fill="white" stroke="#b9cddd" stroke-width="2">
+      <rect x="38" y="147" width="265" height="125" rx="12"/>
+      <rect x="397" y="147" width="305" height="125" rx="12"/>
+      <rect x="397" y="352" width="305" height="125" rx="12"/>
+      <rect x="825" y="147" width="390" height="125" rx="12"/>
+      <rect x="825" y="352" width="390" height="125" rx="12"/>
+    </g>
+    <text x="61" y="183" font-size="24" font-weight="700">XML 模型文件</text>
+    <text x="61" y="220" font-size="21">几何、关节、质量</text>
+    <text x="61" y="251" font-size="21">时间步长、重力</text>
+    <text x="423" y="183" font-size="24" font-weight="700">MjModel：模型定义</text>
+    <text x="423" y="220" font-size="21">加载后得到编译结果</text>
+    <text x="423" y="251" font-size="21">决定模拟什么系统</text>
+    <text x="423" y="391" font-size="24" font-weight="700">MjData：运行数据</text>
+    <text x="423" y="429" font-size="21">时间、位置、速度</text>
+    <text x="423" y="460" font-size="21">以及当前计算结果</text>
+    <text x="852" y="183" font-size="24" font-weight="700">物理更新 mj_step</text>
+    <text x="852" y="220" font-size="21">依据模型推进状态</text>
+    <text x="852" y="251" font-size="21">仿真时间增加一个步长</text>
+    <text x="852" y="391" font-size="24" font-weight="700">读取、记录与显示</text>
+    <text x="852" y="429" font-size="21">CSV 保存数值样本</text>
+    <text x="852" y="460" font-size="21">查看器或渲染器生成画面</text>
+    <g fill="none" stroke="#247d85" stroke-width="3" marker-end="url(#arrow)">
+      <path d="M303 207H384"/>
+      <path d="M702 207H812"/>
+      <path d="M702 405H756V245H812"/>
+      <path d="M1018 272V304H550V338"/>
+      <path d="M702 448H812"/>
+    </g>
+    <text x="314" y="187" font-size="18" fill="#247d85">编译</text>
+    <text x="771" y="294" font-size="18" fill="#247d85">新状态</text>
+    <rect x="38" y="534" width="1177" height="84" rx="12" fill="#e1edf1"/>
+    <text x="61" y="567" font-size="21">修改状态后，mj_forward 可更新派生量，但不推进时间。</text>
+    <text x="61" y="599" font-size="21">只旋转相机只改变观察方式，不会改变物体尺寸，也不会代替物理步进。</text>
+  </g>
+</svg>
