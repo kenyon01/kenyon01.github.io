@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="620" viewBox="0 0 1360 620" role="img" aria-labelledby="title desc">
+  <title id="title">不同模块的更新频率</title>
+  <desc id="desc">教学示例：在200毫秒窗口内，物理步长2毫秒，控制周期10毫秒，相机周期50毫秒，任务决策周期200毫秒。右侧空心标记表示下一周期边界。</desc>
+  <defs>
+    <pattern id="physics" width="10" height="34" patternUnits="userSpaceOnUse" patternTransform="translate(280 0)"><path d="M0 0V34" stroke="#8da7c5" stroke-width="1.6"/></pattern>
+    <pattern id="control" width="50" height="34" patternUnits="userSpaceOnUse" patternTransform="translate(280 0)"><path d="M0 0V34" stroke="#247b8a" stroke-width="3"/></pattern>
+  </defs>
+  <rect width="1360" height="620" rx="20" fill="#f5f7fb"/>
+  <g font-family="Microsoft YaHei,PingFang SC,Noto Sans CJK SC,sans-serif" fill="#192d47">
+    <text x="40" y="52" font-size="28" font-weight="700">图 1-3　同一段时间，不同层次的更新</text>
+    <text x="40" y="88" font-size="20" fill="#56667c">数值为教学设定，用于理解周期关系，不代表某款设备的默认配置。</text>
+    <g fill="none" stroke="#d0d9e5" stroke-width="1.5" stroke-dasharray="5 6"><path d="M280 145V500"/><path d="M530 145V500"/><path d="M780 145V500"/><path d="M1030 145V500"/><path d="M1280 145V500"/></g>
+    <g text-anchor="middle" fill="#56667c" font-size="19"><text x="280" y="132">0 ms</text><text x="530" y="132">50 ms</text><text x="780" y="132">100 ms</text><text x="1030" y="132">150 ms</text><text x="1280" y="132">200 ms</text></g>
+    <g fill="none" stroke="#c4d0df" stroke-width="3"><path d="M280 190H1280"/><path d="M280 285H1280"/><path d="M280 380H1280"/><path d="M280 475H1280"/></g>
+    <rect x="280" y="173" width="1000" height="34" fill="url(#physics)"/><path d="M1280 173V207" stroke="#8da7c5" stroke-width="1.6"/>
+    <rect x="280" y="268" width="1000" height="34" fill="url(#control)"/><path d="M1280 268V302" stroke="#247b8a" stroke-width="3"/>
+    <g fill="#b47d36" stroke="#b47d36" stroke-width="3"><circle cx="280" cy="380" r="9"/><circle cx="530" cy="380" r="9"/><circle cx="780" cy="380" r="9"/><circle cx="1030" cy="380" r="9"/><circle cx="1280" cy="380" r="9" fill="#f5f7fb"/></g>
+    <g fill="#694f91" stroke="#694f91" stroke-width="3"><circle cx="280" cy="475" r="11"/><circle cx="1280" cy="475" r="11" fill="#f5f7fb"/></g>
+    <text x="40" y="181" font-size="22" font-weight="700">物理更新</text><text x="40" y="213" font-size="18" fill="#56667c">2 ms · 500 Hz</text>
+    <text x="40" y="276" font-size="22" font-weight="700">关节控制</text><text x="40" y="308" font-size="18" fill="#56667c">10 ms · 100 Hz</text>
+    <text x="40" y="371" font-size="22" font-weight="700">相机采样</text><text x="40" y="403" font-size="18" fill="#56667c">50 ms · 20 Hz</text>
+    <text x="40" y="466" font-size="22" font-weight="700">任务决策</text><text x="40" y="498" font-size="18" fill="#56667c">200 ms · 5 Hz</text>
+    <text x="280" y="554" font-size="20" fill="#56667c">在 [0, 200 ms) 内：100 个物理间隔，20 个控制间隔，4 次相机采样。</text>
+    <text x="280" y="589" font-size="19" fill="#56667c">200 ms 处的空心圆属于下一周期；策略两次决策之间，底层控制仍在继续。</text>
+  </g>
+</svg>

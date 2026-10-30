@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1260" height="650" viewBox="0 0 1260 650" role="img" aria-labelledby="title desc">
+  <title id="title">转动关节、移动关节与联动夹爪</title>
+  <desc id="desc">左图连杆绕一个固定轴转动，使用角度描述；中图滑台沿导轨移动，使用位移描述；右图两根手指联动，使用一个开口宽度描述。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto-start-reverse"><path d="M0 0L9 4.5L0 9Z" fill="#247b8a"/></marker>
+  </defs>
+  <rect width="1260" height="650" rx="20" fill="#f5f7fb"/>
+  <g font-family="Microsoft YaHei,PingFang SC,Noto Sans CJK SC,sans-serif" fill="#192d47">
+    <text x="40" y="52" font-size="27" font-weight="700">图 1-1　按独立运动理解自由度</text>
+    <text x="40" y="88" font-size="20" fill="#56667c">只画机构关系，不表示某款机器人的实际尺寸或驱动结构。</text>
+    <g fill="#fff" stroke="#dce3ed"><rect x="25" y="115" width="390" height="500" rx="14"/><rect x="435" y="115" width="390" height="500" rx="14"/><rect x="845" y="115" width="390" height="500" rx="14"/></g>
+    <text x="55" y="158" font-size="24" font-weight="700">转动关节</text>
+    <text x="465" y="158" font-size="24" font-weight="700">移动关节</text>
+    <text x="875" y="158" font-size="24" font-weight="700">联动平行夹爪</text>
+    <g stroke-linecap="round">
+      <path d="M80 440H360" stroke="#b1bdcd" stroke-width="5"/>
+      <path d="M155 440V390" stroke="#62758f" stroke-width="24"/>
+      <path d="M155 390H345" stroke="#b8c6d8" stroke-width="13" stroke-dasharray="10 9"/>
+      <path d="M155 390L295 255" stroke="#24507d" stroke-width="22"/>
+      <circle cx="155" cy="390" r="25" fill="#e2eef8" stroke="#24507d" stroke-width="5"/>
+      <circle cx="155" cy="390" r="5" fill="#24507d"/>
+      <path d="M260 390A105 105 0 0 0 231 318" fill="none" stroke="#247b8a" stroke-width="4" marker-end="url(#arrow)"/>
+    </g>
+    <text x="278" y="371" font-size="24" fill="#247b8a">q</text>
+    <text x="74" y="481" font-size="19">固定转轴</text>
+    <text x="220" y="220" font-size="19">连杆</text>
+    <path d="M250 229L267 275" stroke="#8a9aaf" stroke-width="1.5"/>
+    <g>
+      <path d="M475 375H785M475 405H785" stroke="#72859c" stroke-width="8"/>
+      <rect x="565" y="315" width="100" height="120" rx="8" fill="#dce9f6" stroke="#24507d" stroke-width="4"/>
+      <path d="M490 285H757" stroke="#247b8a" stroke-width="3.5" marker-end="url(#arrow)"/>
+      <path d="M500 465H615" stroke="#247b8a" stroke-width="3" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+      <path d="M500 440V485M615 440V485" stroke="#91a2b7" stroke-width="1.5"/>
+    </g>
+    <text x="605" y="270" font-size="19">移动方向</text>
+    <text x="547" y="500" font-size="23" fill="#247b8a">d</text>
+    <text x="581" y="385" font-size="21">滑台</text>
+    <g>
+      <rect x="900" y="260" width="280" height="65" rx="10" fill="#dce9f6" stroke="#24507d" stroke-width="3"/>
+      <path d="M955 325V400H982M1125 325V400H1098" fill="none" stroke="#24507d" stroke-width="20"/>
+      <path d="M924 352H979M1156 352H1101" stroke="#247b8a" stroke-width="3.5" marker-end="url(#arrow)"/>
+      <rect x="999" y="370" width="82" height="82" rx="4" fill="#f7dfb3" stroke="#a17c39" stroke-width="2"/>
+      <path d="M982 485H1098" stroke="#247b8a" stroke-width="3" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+      <path d="M982 420V502M1098 420V502" stroke="#91a2b7" stroke-width="1.5"/>
+    </g>
+    <text x="1000" y="301" font-size="21">联动机构</text>
+    <text x="1004" y="523" font-size="20" fill="#247b8a">开口 w</text>
+    <text x="55" y="554" font-size="20">一个独立角度 q</text>
+    <text x="55" y="585" font-size="18" fill="#56667c">示例单位：rad</text>
+    <text x="465" y="554" font-size="20">一个独立位移 d</text>
+    <text x="465" y="585" font-size="18" fill="#56667c">示例单位：m</text>
+    <text x="875" y="554" font-size="20">两指联动，一个独立开口 w</text>
+    <text x="875" y="585" font-size="18" fill="#56667c">示例单位：m</text>
+  </g>
+</svg>
