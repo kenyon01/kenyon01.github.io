@@ -11,9 +11,10 @@ tags:
 reading_time: 5
 published: true
 visibility: public
-chapter: chapter-79b1d5cfe41b
+chapter: robotics-book-extras
 chapter_path:
-- 第二章 · 仿真与接触
+- 机器人入门实战
+- 扩展阅读与实践
 ---
 
 > 本文整理自 2026 年 9 月 18 日的抓取诊断记录。下面是保存动作的局部回放结果，不是新开展的实验，也不代表完整任务成功率。

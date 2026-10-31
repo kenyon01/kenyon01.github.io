@@ -11,10 +11,10 @@ tags:
 reading_time: 4
 published: true
 visibility: public
-chapter: chapter-2b04ef0575e7
+chapter: robotics-book-extras
 chapter_path:
-- 第一章 · 动作与控制
-- 1.2 轨迹与执行
+- 机器人入门实战
+- 扩展阅读与实践
 ---
 
 > 本文依据 2026 年 9 月 18 日的仿真诊断记录整理。文中的参数是当时场景的实验条件，不是实机调参建议。

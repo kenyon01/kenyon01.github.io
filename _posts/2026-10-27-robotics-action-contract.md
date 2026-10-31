@@ -11,10 +11,10 @@ tags:
 reading_time: 4
 published: true
 visibility: public
-chapter: chapter-2382d3fd788b
+chapter: robotics-book-extras
 chapter_path:
-- 第一章 · 动作与控制
-- 1.1 接口与动作语义
+- 机器人入门实战
+- 扩展阅读与实践
 ---
 
 > 本文整理于 2026 年 10 月 27 日，依据 2026 年 9 月 18 日的项目诊断记录。它描述当时的局部验证，不代表当前完整系统或真实机器人已通过验收。

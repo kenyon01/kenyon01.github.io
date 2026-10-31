@@ -4,7 +4,7 @@ title: 从零配置 Isaac Sim：远程串流与机械狗仿真入门
 description: 从 Ubuntu GPU 环境、Isaac Lab 安装到 Windows WebRTC 串流，逐步认识界面、运行 ANYmal 机械狗并接入键盘控制。
 date: 2026-10-31
 topic: robotics
-chapter: chapter-79b1d5cfe41b
+chapter: robotics-book-extras
 chapter_order: 50
 tags:
 - Isaac Sim
@@ -16,7 +16,8 @@ reading_time: 18
 visibility: public
 published: true
 chapter_path:
-- 第二章 · 仿真与接触
+- 机器人入门实战
+- 扩展阅读与实践
 ---
 
 ## 先看我们要搭建什么
