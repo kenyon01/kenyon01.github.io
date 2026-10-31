@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1260" height="620" viewBox="0 0 1260 620" role="img" aria-labelledby="title desc">
+<title id="title">一个控制区间里的目标与测量</title>
+<desc id="desc">零毫秒发送目标，保持十毫秒，期间推进五个两毫秒物理步。十毫秒读取实测状态。一行记录绑定区间开始目标与区间结束测量，同时保留两端时间。</desc>
+<defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#287a83"/></marker></defs>
+<rect width="1260" height="620" rx="24" fill="#f3f6fa"/>
+<g font-family="Microsoft YaHei,Noto Sans CJK SC,sans-serif" fill="#20374c">
+<text x="38" y="54" font-size="28" font-weight="700">图 3-1　目标在区间开始发送，响应在区间末尾记录</text>
+<text x="38" y="94" font-size="21" fill="#53687b">物理步长 2 ms；每五个物理步更新一次参考，控制周期 10 ms。</text>
+<rect x="190" y="145" width="950" height="60" rx="10" fill="#f4dcaa"/>
+<text x="215" y="183" font-size="23">保持同一组绝对关节目标 q_target[k]</text>
+<text x="38" y="183" font-size="23">控制输入</text>
+<text x="38" y="282" font-size="23">物理推进</text>
+<path d="M190 270H1140" stroke="#8196a6" stroke-width="3"/>
+<g stroke="#287a83" stroke-width="3" fill="none" marker-end="url(#a)">
+<path d="M195 250H367"/><path d="M385 250H557"/><path d="M575 250H747"/><path d="M765 250H937"/><path d="M955 250H1127"/>
+</g>
+<g font-size="21" text-anchor="middle">
+<text x="190" y="312">0 ms</text><text x="380" y="312">2 ms</text><text x="570" y="312">4 ms</text><text x="760" y="312">6 ms</text><text x="950" y="312">8 ms</text><text x="1140" y="312">10 ms</text>
+</g>
+<g fill="#287a83"><circle cx="190" cy="270" r="7"/><circle cx="380" cy="270" r="7"/><circle cx="570" cy="270" r="7"/><circle cx="760" cy="270" r="7"/><circle cx="950" cy="270" r="7"/><circle cx="1140" cy="270" r="7"/></g>
+<rect x="38" y="359" width="545" height="96" rx="12" fill="white" stroke="#c3d2df"/>
+<text x="60" y="397" font-size="23" font-weight="700">区间开始：发送目标</text>
+<text x="60" y="432" font-size="21">command_time = 0.000 s</text>
+<rect x="640" y="359" width="575" height="96" rx="12" fill="white" stroke="#c3d2df"/>
+<text x="662" y="397" font-size="23" font-weight="700">区间结束：刷新并读取实测状态</text>
+<text x="662" y="432" font-size="21">observation_time = 0.010 s</text>
+<rect x="38" y="494" width="1177" height="86" rx="12" fill="#deedf0"/>
+<text x="60" y="530" font-size="23">本行误差 = 本区间发送目标 − 区间末尾实测角度</text>
+<text x="60" y="563" font-size="21">两端时间都保存；不能把这两个量标成在同一时刻取得。</text>
+</g></svg>
