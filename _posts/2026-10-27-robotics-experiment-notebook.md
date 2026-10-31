@@ -10,9 +10,10 @@ tags:
 reading_time: 4
 published: true
 visibility: public
-chapter: chapter-b2be9421cd4f
+chapter: robotics-book-extras
 chapter_path:
-- 第三章 · 实验方法
+- 机器人入门实战
+- 扩展阅读与实践
 ---
 
 ## 记录的目标，是让下一步更清楚
