@@ -4,7 +4,7 @@ title: 从力反馈旋钮看 FOC：为什么要有 D 轴和 Q 轴？
 description: 一只旋钮有三根电机线，SimpleFOC 却画出两条电流曲线。用一张随转子旋转的坐标图，读懂磁场、转矩和校准的关系。
 date: 2026-11-06
 topic: robotics
-chapter: robotics-book-extras
+chapter: robotics-motor-control
 chapter_order: 60
 tags:
 - 电机控制
@@ -16,7 +16,7 @@ visibility: public
 published: true
 chapter_path:
 - 机器人入门实战
-- 扩展阅读与实践
+- 电机控制
 ---
 
 力反馈旋钮有三根电机线，可 SimpleFOC 的图上却画着两条电流曲线，叫作 `Cd` 和 `Cq`。要理解它们，先想一个具体的问题：旋钮已经转过一段角度，我想让它继续以同样的力拧我的手，线圈里的电流该怎么变？
